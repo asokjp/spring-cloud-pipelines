@@ -23,7 +23,7 @@ function logInToPaas() {
 	curl -LO "https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/darwin/amd64/kubectl" --fail
 	chmod +x "${KUBECTL_BIN}"
 	echo "Removing current Kubernetes configuration"
-	rm -rf "${KUBE_CONFIG_PATH}" || echo "Failed to remove Kube config. Continuing with the script"
+	#rm -rf "${KUBE_CONFIG_PATH}" || echo "Failed to remove Kube config. Continuing with the script"
         downloadGCloud
 	echo "Logging in to Kubernetes API [${apiUrl}], with cluster name [${k8sClusterName}] and user [${k8sClusterUser}]"
 	#"${KUBECTL_BIN}" config set-cluster "${k8sClusterName}" --server="https://${apiUrl}" --certificate-authority="${k8sCa}" --embed-certs=true
@@ -40,7 +40,7 @@ function logInToPaas() {
 	#"${KUBECTL_BIN}" config set-context "${k8sSystemName}" --cluster="${k8sClusterName}" --user="${k8sClusterUser}"  --kubeconfig="${KUBE_CONFIG_PATH}"
 	#"${KUBECTL_BIN}" config use-context "${k8sSystemName}" --kubeconfig="${KUBE_CONFIG_PATH}"
 	#./google-cloud-sdk/bin/gcloud init
-	gcloud container clusters get-credentials test --zone us-central1-c --project third-apex-181907
+	#gcloud container clusters get-credentials test --zone us-central1-c --project third-apex-181907
 	echo "CLI version"
 	"${KUBECTL_BIN}" version
 }
