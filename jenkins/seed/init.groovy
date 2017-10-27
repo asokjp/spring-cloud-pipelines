@@ -104,8 +104,8 @@ if (publicKey.exists()) {
 	println "Public key file does not exist in " + publicKey.getPath()
 }
 
-String gitUser = new File('/usr/share/jenkins/gituser')?.text ?: "changeme"
-String gitPass = new File('/usr/share/jenkins/gitpass')?.text ?: "changeme"
+String gitUser = new File('/usr/share/jenkins/gituser')?.text ?: "asokjp"
+String gitPass = new File('/usr/share/jenkins/gitpass')?.text ?: "Lalithamma1"
 String gitSshKey = new File('/usr/share/jenkins/gitsshkey')?.text ?: ""
 
 if (gitSshKey) {
@@ -129,11 +129,11 @@ if (kubernetesHome.exists()) {
 }
 
 String dockerRegistryUser =
-	new File('/usr/share/jenkins/dockerRegistryUser')?.text ?: "changeme"
+	new File('/usr/share/jenkins/dockerRegistryUser')?.text ?: "asokjp"
 String dockerRegistryPass =
-	new File('/usr/share/jenkins/dockerRegistryPass')?.text ?: "changeme"
+	new File('/usr/share/jenkins/dockerRegistryPass')?.text ?: "Lalithamma@99516"
 String dockerRegistryEmail =
-	new File('/usr/share/jenkins/dockerRegistryEmail')?.text ?: "change@me.com"
+	new File('/usr/share/jenkins/dockerRegistryEmail')?.text ?: "asok.payyapilly@UST-Global.com"
 
 println "Creating repo with binaries credentials"
 String dockerCredId = "docker-registry"
