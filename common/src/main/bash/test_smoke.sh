@@ -11,4 +11,5 @@ export ENVIRONMENT=TEST
  echo "No pipeline.sh found"
 
 prepareForSmokeTests
+echo "executing smoke tests"
 runSmokeTests
