@@ -24,8 +24,6 @@ function logInToPaas() {
 	chmod +x "${KUBECTL_BIN}"
 	echo "Removing current Kubernetes configuration"
 	#rm -rf "${KUBE_CONFIG_PATH}" || echo "Failed to remove Kube config. Continuing with the script"
-	GCLOUD_VERSION="${GCLOUD_VERSION:-172.0.1}"
-		GCLOUD_ARCHIVE="${GCLOUD_ARCHIVE:-google-cloud-sdk-${GCLOUD_VERSION}-${OS_TYPE}-x86_64.tar.gz}"
 		GCLOUD_PARENT_PATH="${GCLOUD_PARENT_PATH:-${HOME}/gcloud}"
 		GCLOUD_PATH="${GCLOUD_PATH:-${GCLOUD_PARENT_PATH}/google-cloud-sdk}"
 		if [[ ! -x "${GCLOUD_PATH}" ]]; then
@@ -59,6 +57,7 @@ function downloadGCloud() {
 		else
 			OS_TYPE="darwin"
 		fi
+		echo "OS Type is - [${OS_TYPE}]"
 		GCLOUD_VERSION="${GCLOUD_VERSION:-172.0.1}"
 		GCLOUD_ARCHIVE="${GCLOUD_ARCHIVE:-google-cloud-sdk-${GCLOUD_VERSION}-${OS_TYPE}-x86_64.tar.gz}"
 		GCLOUD_PARENT_PATH="${GCLOUD_PARENT_PATH:-${HOME}/gcloud}"
