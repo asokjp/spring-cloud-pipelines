@@ -24,13 +24,7 @@ function logInToPaas() {
 	chmod +x "${KUBECTL_BIN}"
 	echo "Removing current Kubernetes configuration"
 	#rm -rf "${KUBE_CONFIG_PATH}" || echo "Failed to remove Kube config. Continuing with the script"
-		GCLOUD_PARENT_PATH="${GCLOUD_PARENT_PATH:-${HOME}/gcloud}"
-		GCLOUD_PATH="${GCLOUD_PATH:-${GCLOUD_PARENT_PATH}/google-cloud-sdk}"
-		if [[ ! -x "${GCLOUD_PATH}" ]]; then
-			echo "installing gcloud ....."
-			downloadGCloud
-		fi
-        
+        downloadGCloud
 	echo "Logging in to Kubernetes API [${apiUrl}], with cluster name [${k8sClusterName}] and user [${k8sClusterUser}]"
 	#"${KUBECTL_BIN}" config set-cluster "${k8sClusterName}" --server="https://${apiUrl}" --certificate-authority="${k8sCa}" --embed-certs=true
 	# TOKEN will get injected as a credential if present
@@ -57,7 +51,6 @@ function downloadGCloud() {
 		else
 			OS_TYPE="darwin"
 		fi
-		echo "OS Type is - [${OS_TYPE}]"
 		GCLOUD_VERSION="${GCLOUD_VERSION:-172.0.1}"
 		GCLOUD_ARCHIVE="${GCLOUD_ARCHIVE:-google-cloud-sdk-${GCLOUD_VERSION}-${OS_TYPE}-x86_64.tar.gz}"
 		GCLOUD_PARENT_PATH="${GCLOUD_PARENT_PATH:-${HOME}/gcloud}"
@@ -76,7 +69,6 @@ function downloadGCloud() {
 		popd || exit
 
 }
-
 
 function testDeploy() {
 	local appName
@@ -121,44 +113,23 @@ function deployService() {
 	local coordinatesSeparator=":"
 	echo "Will deploy service with type [${serviceType}] name [${serviceName}] and coordinates [${serviceCoordinates}]"
 	case ${serviceType} in
-		rabbitmq)
-			deployRabbitMq "${serviceName}"
+		configserver)
+			deployConfigServer "${serviceName}"
 		;;
-		mysql)
-			deployMySql "${serviceName}"
-		;;
-		eureka)
-			local previousIfs
-			previousIfs="${IFS}"
-			IFS=${coordinatesSeparator} read -r EUREKA_ARTIFACT_ID EUREKA_VERSION <<<"${serviceCoordinates}"
-			IFS="${previousIfs}"
-			deployEureka "${EUREKA_ARTIFACT_ID}:${EUREKA_VERSION}" "${serviceName}"
-		;;
-		stubrunner)
-			local uniqueEurekaName
-			uniqueEurekaName="$(eurekaName)"
-			local uniqueRabbitName
-			uniqueRabbitName="$(rabbitMqName)"
-			local previousIfs
-			previousIfs="${IFS}"
-			IFS=${coordinatesSeparator} read -r STUBRUNNER_ARTIFACT_ID STUBRUNNER_VERSION <<<"${serviceCoordinates}"
-			IFS="${previousIfs}"
-			local parsedStubRunnerUseClasspath
-			parsedStubRunnerUseClasspath="$(echo "${PARSED_YAML}" | jq --arg x "${LOWERCASE_ENV}" '.[$x].services[] | select(.type == "stubrunner") | .useClasspath' | sed 's/^"\(.*\)"$/\1/')"
-			local stubRunnerUseClasspath
-			stubRunnerUseClasspath=$(if [[ "${parsedStubRunnerUseClasspath}" == "null" ]]; then
-				echo "false";
-			else
-				echo "${parsedStubRunnerUseClasspath}";
-			fi)
-			deployStubRunnerBoot "${STUBRUNNER_ARTIFACT_ID}:${STUBRUNNER_VERSION}" "${REPO_WITH_BINARIES}" "${uniqueRabbitName}" "${uniqueEurekaName}" "${serviceName}"
-		;;
+                otherservices)
+			deployOtherServices "${serviceName}"
+                ;;
 		*)
 			echo "Unknown service [${serviceType}]"
 			return 1
 		;;
 	esac
 }
+
+function configServerName() {
+ echo "${PARSED_YAML}" | jq --arg x "${LOWERCASE_ENV}" '.[$x].services[] | select(.type == "configserver") | .name' | sed 's/^"\(.*\)"$/\1/' || echo ""
+}
+
 
 function eurekaName() {
 	echo "${PARSED_YAML}" | jq --arg x "${LOWERCASE_ENV}" '.[$x].services[] | select(.type == "eureka") | .name' | sed 's/^"\(.*\)"$/\1/' || echo ""
@@ -187,17 +158,6 @@ function appSystemProps() {
 	local mySqlName
 	mySqlName="$(mySqlName)"
 	local mySqlDatabase
-	mySqlDatabase="$(mySqlDatabase)"
-	if [[ "${eurekaName}" != "" && "${eurekaName}" != "null" ]]; then
-		systemProps="${systemProps} -Deureka.client.serviceUrl.defaultZone=http://${eurekaName}:8761/eureka"
-	fi
-	if [[ "${rabbitMqName}" != "" && "${rabbitMqName}" != "null" ]]; then
-		systemProps="${systemProps} -DSPRING_RABBITMQ_ADDRESSES=${rabbitMqName}:5672"
-	fi
-	if [[ "${mySqlName}" != "" && "${mySqlName}" != "null" ]]; then
-		systemProps="${systemProps} -Dspring.datasource.url=jdbc:mysql://${mySqlName}/${mySqlDatabase}"
-	fi
-	echo "${systemProps}"
 }
 
 function deleteService() {
@@ -206,6 +166,49 @@ function deleteService() {
 	echo "Deleting all possible entries with name [${serviceName}]"
 	deleteAppByName "${serviceName}"
 }
+
+function deployConfigServer() {
+local serviceName="${1:-config-server}"
+	local objectDeployed
+	objectDeployed="$(objectDeployed "service" "${serviceName}")"
+	if [[ "${ENVIRONMENT}" == "STAGE" && "${objectDeployed}" == "true" ]]; then
+		echo "Service [${serviceName}] already deployed. Won't redeploy for stage"
+		return
+	fi
+	echo "Waiting for configserver to start"
+	local originalDeploymentFile="${__ROOT}/k8s/configserver.yml"
+	local outputDirectory
+	outputDirectory="$(outputFolder)/k8s"
+	mkdir -p "${outputDirectory}"
+	cp "${originalDeploymentFile}" "${outputDirectory}"
+	local deploymentFile="${outputDirectory}/configserver.yml"
+	if [[ "${ENVIRONMENT}" == "TEST" ]]; then
+		deleteAppByFile "${deploymentFile}"
+	fi
+	replaceApp "${deploymentFile}"
+}
+
+function deployOtherServices() {
+local serviceName="${1:-other-services}"
+	local objectDeployed
+	objectDeployed="$(objectDeployed "service" "${serviceName}")"
+	if [[ "${ENVIRONMENT}" == "STAGE" && "${objectDeployed}" == "true" ]]; then
+		echo "Service [${serviceName}] already deployed. Won't redeploy for stage"
+		return
+	fi
+	echo "Waiting for configserver to start"
+	local originalDeploymentFile="${__ROOT}/k8s/poc1.yml"
+	local outputDirectory
+	outputDirectory="$(outputFolder)/k8s"
+	mkdir -p "${outputDirectory}"
+	cp "${originalDeploymentFile}" "${outputDirectory}"
+	local deploymentFile="${outputDirectory}/poc1.yml"
+	if [[ "${ENVIRONMENT}" == "TEST" ]]; then
+		deleteAppByFile "${deploymentFile}"
+	fi
+	replaceApp "${deploymentFile}"
+}
+
 
 function deployRabbitMq() {
 	local serviceName="${1:-rabbitmq-github}"
@@ -497,27 +500,20 @@ function prepareForSmokeTests() {
 	echo "Retrieving group and artifact id - it can take a while..."
 	local appName
 	appName="$(retrieveAppName)"
-	echo "App Name is  -  [${appName}]"
-	echo "creating outputfolder  -  [${OUTPUT_FOLDER}]"
 	mkdir -p "${OUTPUT_FOLDER}"
 	logInToPaas
 	local applicationPort
 	applicationPort="$(portFromKubernetes "${appName}")"
-	echo "Application port is   -  [${applicationPort}]"
 	local stubrunnerAppName
 	stubrunnerAppName="stubrunner-${appName}"
-	echo "stubrunner is    -  [${stubrunnerAppName}]"
 	local stubrunnerPort
 	stubrunnerPort="$(portFromKubernetes "${stubrunnerAppName}")"
-	echo "stubrunner is    -  [${stubrunnerAppName}] - [${stubrunnerPort}]"
 	local applicationHost
 	applicationHost="$(applicationHost "${appName}")"
 	local stubRunnerUrl
 	stubRunnerUrl="$(applicationHost "${stubrunnerAppName}")"
 	export APPLICATION_URL="${applicationHost}:${applicationPort}"
 	export STUBRUNNER_URL="${stubRunnerUrl}:${stubrunnerPort}"
-	echo "APPLICATION_URL is    -  [${APPLICATION_URL}]"
-	echo "STUBRUNNER_URL is    -  [${STUBRUNNER_URL}]"
 }
 
 function prepareForE2eTests() {

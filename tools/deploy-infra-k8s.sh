@@ -33,7 +33,7 @@ function deploy_project {
 	pushd "${DEST_DIR}"
 	rm -rf "${project_name}"
 	git clone "${project_repo}" "${project_name}" && cd "${project_name}"
-	./mvnw install docker:build -Pdocker
+	./mvnw clean install 
 	popd
 }
 
@@ -41,12 +41,12 @@ echo "Using Docker running at [${POTENTIAL_DOCKER_HOST}]"
 echo "Destination directory to clone the apps is [${DEST_DIR}]"
 echo "Artifactory ID [${ARTIFACTORY_ID}]"
 
-deploy_project "https://github.com/spring-cloud-samples/github-eureka"
-deploy_project "https://github.com/spring-cloud-samples/github-analytics-stub-runner-boot"
-deploy_project "https://github.com/spring-cloud-samples/github-analytics-stub-runner-boot-no-eureka"
+deploy_project  "https://asokjp@bitbucket.org/asokjp/claim-contracts.git"
+#deploy_project "https://github.com/spring-cloud-samples/github-analytics-stub-runner-boot"
+#deploy_project "https://github.com/spring-cloud-samples/github-analytics-stub-runner-boot-no-eureka"
 #deploy_project "https://github.com/spring-cloud-samples/github-webhook"
-deploy_project "https://github.com/spring-cloud-samples/github-analytics-stub-runner-boot-classpath-stubs" || echo "Failed to build the project - try again once github-webhook stubs get uploaded"
+#deploy_project "https://github.com/spring-cloud-samples/github-analytics-stub-runner-boot-classpath-stubs" || echo "Failed to build the project - try again once github-webhook stubs get uploaded"
 #deploy_project "https://github.com/spring-cloud-samples/github-analytics-stub-runner-boot-classpath-stubs-kubernetes" || echo "Failed to build the project - try again once github-webhook stubs get uploaded"
-deploy_project "https://github.com/spring-cloud-samples/github-analytics-stub-runner-boot-no-eureka-classpath-stubs" || echo "Failed to build the project - try again once github-webhook stubs get uploaded"
+#deploy_project "https://github.com/spring-cloud-samples/github-analytics-stub-runner-boot-no-eureka-classpath-stubs" || echo "Failed to build the project - try again once github-webhook stubs get uploaded"
 
 echo "DONE!"

@@ -1,0 +1,35 @@
+##################################################################################################
+# config service
+##################################################################################################
+apiVersion: v1
+kind: Service
+metadata:
+  name: configserver
+  labels:
+    app: configserver
+spec:
+  ports:
+  - port: 8888
+    name: http
+  selector:
+    app: configserver
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: configserver-v1
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: configserver
+        version: v1
+    spec:
+      containers:
+      - name: configserver
+        image: docker.io/asokjp/config-server-v1
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8888
+---
