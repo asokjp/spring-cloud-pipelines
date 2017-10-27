@@ -17,13 +17,17 @@ fi
 function build() {
 	# Required by settings.xml
 	BUILD_OPTIONS="${BUILD_OPTIONS} -DM2_SETTINGS_REPO_ID=${M2_SETTINGS_REPO_ID} -DM2_SETTINGS_REPO_USERNAME=${M2_SETTINGS_REPO_USERNAME} -DM2_SETTINGS_REPO_PASSWORD=${M2_SETTINGS_REPO_PASSWORD}"
+
 	# shellcheck disable=SC2086
+	echo "Build option is ${BUILD_OPTIONS}"
+	echo "pipline version is ${PIPELINE_VERSION}"
 	"${MAVENW_BIN}" org.codehaus.mojo:versions-maven-plugin:2.3:set -DnewVersion="${PIPELINE_VERSION}" ${BUILD_OPTIONS} || (echo "Build failed!!!" && return 1)
 	if [[ "${CI}" == "CONCOURSE" ]]; then
 		# shellcheck disable=SC2086
 		"${MAVENW_BIN}" clean verify deploy -Ddistribution.management.release.id="${M2_SETTINGS_REPO_ID}" -Ddistribution.management.release.url="${REPO_WITH_BINARIES}" -Drepo.with.binaries="${REPO_WITH_BINARIES}" ${BUILD_OPTIONS} || (printTestResults && return 1)
 	else
 		# shellcheck disable=SC2086
+		echo "clean verify deploying..."
 		"${MAVENW_BIN}" clean verify deploy -Ddistribution.management.release.id="${M2_SETTINGS_REPO_ID}" -Ddistribution.management.release.url="${REPO_WITH_BINARIES}" -Drepo.with.binaries="${REPO_WITH_BINARIES}" ${BUILD_OPTIONS}
 	fi
 }
