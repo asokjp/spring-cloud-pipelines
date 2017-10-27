@@ -490,20 +490,27 @@ function prepareForSmokeTests() {
 	echo "Retrieving group and artifact id - it can take a while..."
 	local appName
 	appName="$(retrieveAppName)"
+	echo "App Name is  -  [${appName}]"
+	echo "creating outputfolder  -  [${OUTPUT_FOLDER}]"
 	mkdir -p "${OUTPUT_FOLDER}"
 	logInToPaas
 	local applicationPort
 	applicationPort="$(portFromKubernetes "${appName}")"
+	echo "Application port is   -  [${applicationPort}]"
 	local stubrunnerAppName
 	stubrunnerAppName="stubrunner-${appName}"
+	echo "stubrunner is    -  [${stubrunnerAppName}]"
 	local stubrunnerPort
 	stubrunnerPort="$(portFromKubernetes "${stubrunnerAppName}")"
+	echo "stubrunner is    -  [${stubrunnerAppName}] - [${stubrunnerPort}]"
 	local applicationHost
 	applicationHost="$(applicationHost "${appName}")"
 	local stubRunnerUrl
 	stubRunnerUrl="$(applicationHost "${stubrunnerAppName}")"
 	export APPLICATION_URL="${applicationHost}:${applicationPort}"
 	export STUBRUNNER_URL="${stubRunnerUrl}:${stubrunnerPort}"
+	echo "APPLICATION_URL is    -  [${APPLICATION_URL}]"
+	echo "STUBRUNNER_URL is    -  [${STUBRUNNER_URL}]"
 }
 
 function prepareForE2eTests() {
