@@ -21,7 +21,8 @@ function build() {
 	# shellcheck disable=SC2086
 	echo "Build option is ${BUILD_OPTIONS}"
 	echo "pipline version is ${PIPELINE_VERSION}"
-	sh "${MAVENW_BIN}" org.codehaus.mojo:versions-maven-plugin:2.3:set -DnewVersion="${PIPELINE_VERSION}" ${BUILD_OPTIONS} || (echo "Build failed!!!" && return 1)
+	chmod a+x mvnw
+	"${MAVENW_BIN}" org.codehaus.mojo:versions-maven-plugin:2.3:set -DnewVersion="${PIPELINE_VERSION}" ${BUILD_OPTIONS} || (echo "Build failed!!!" && return 1)
 	if [[ "${CI}" == "CONCOURSE" ]]; then
 		# shellcheck disable=SC2086
 		"${MAVENW_BIN}" clean verify deploy -Ddistribution.management.release.id="${M2_SETTINGS_REPO_ID}" -Ddistribution.management.release.url="${REPO_WITH_BINARIES}" -Drepo.with.binaries="${REPO_WITH_BINARIES}" ${BUILD_OPTIONS} || (printTestResults && return 1)
