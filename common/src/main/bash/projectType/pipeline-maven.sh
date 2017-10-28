@@ -3,7 +3,7 @@
 set -e
 
 export MAVENW_BIN
-MAVENW_BIN="${MAVENW_BIN:- sh ./mvnw}"
+MAVENW_BIN="${MAVENW_BIN:- ./mvnw}"
 
 # It takes ages on Docker to run the app without this
 if [[ ${BUILD_OPTIONS} != *"java.security.egd"* ]]; then
@@ -21,7 +21,7 @@ function build() {
 	# shellcheck disable=SC2086
 	echo "Build option is ${BUILD_OPTIONS}"
 	echo "pipline version is ${PIPELINE_VERSION}"
-	"${MAVENW_BIN}" org.codehaus.mojo:versions-maven-plugin:2.3:set -DnewVersion="${PIPELINE_VERSION}" ${BUILD_OPTIONS} || (echo "Build failed!!!" && return 1)
+	sh "${MAVENW_BIN}" org.codehaus.mojo:versions-maven-plugin:2.3:set -DnewVersion="${PIPELINE_VERSION}" ${BUILD_OPTIONS} || (echo "Build failed!!!" && return 1)
 	if [[ "${CI}" == "CONCOURSE" ]]; then
 		# shellcheck disable=SC2086
 		"${MAVENW_BIN}" clean verify deploy -Ddistribution.management.release.id="${M2_SETTINGS_REPO_ID}" -Ddistribution.management.release.url="${REPO_WITH_BINARIES}" -Drepo.with.binaries="${REPO_WITH_BINARIES}" ${BUILD_OPTIONS} || (printTestResults && return 1)
