@@ -3,7 +3,7 @@
 set -e
 
 export MAVENW_BIN
-MAVENW_BIN="${MAVENW_BIN:-./mvnw}"
+MAVENW_BIN="${MAVENW_BIN:- sh ./mvnw}"
 
 # It takes ages on Docker to run the app without this
 if [[ ${BUILD_OPTIONS} != *"java.security.egd"* ]]; then
