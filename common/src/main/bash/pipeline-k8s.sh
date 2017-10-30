@@ -144,7 +144,7 @@ function deploy_project {
 	git clone "${project_repo}" && cd "${project_name}"
 	chmod a+x mvnw
 	./mvnw clean install 
-	popd || exit
+	popd
 }
 
 function configServerName() {
