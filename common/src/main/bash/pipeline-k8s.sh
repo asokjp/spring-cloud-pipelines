@@ -533,7 +533,7 @@ function prepareForSmokeTests() {
 	applicationHost="$(applicationHost "${appName}")"
 	#local stubRunnerUrl
 	#stubRunnerUrl="$(applicationHost "${stubrunnerAppName}")"
-	echo "application url: ${stubRunnerUrl}:${stubrunnerPort}"
+	echo "application url: ${applicationHost}:${applicationPort}"
 	export APPLICATION_URL="${applicationHost}:${applicationPort}"
 	#export STUBRUNNER_URL="${stubRunnerUrl}:${stubrunnerPort}"
 }

@@ -43,6 +43,7 @@ function apiCompatibilityCheck() {
 		echo "No prod release took place - skipping this step"
 	else
 		# Downloading latest jar
+		chmod a+x mvnw
 		LATEST_PROD_VERSION=${LATEST_PROD_TAG#prod/}
 		echo "Last prod version equals [${LATEST_PROD_VERSION}]"
 		if [[ "${CI}" == "CONCOURSE" ]]; then
@@ -85,6 +86,7 @@ function retrieveGroupId() {
 
 function retrieveAppName() {
 	{
+	chmod a+x mvnw
 		ruby -r rexml/document  \
  -e 'puts REXML::Document.new(File.new(ARGV.shift)).elements["/project/artifactId"].text' pom.xml  \
  || "${MAVENW_BIN}" org.apache.maven.plugins:maven-help-plugin:2.2:evaluate  \
@@ -105,7 +107,7 @@ function runSmokeTests() {
 	local applicationUrl="${APPLICATION_URL}"
 	local stubrunnerUrl="${STUBRUNNER_URL}"
 	echo "Running smoke tests. Application url [${applicationUrl}], Stubrunner Url [${stubrunnerUrl}]"
-
+chmod a+x mvnw
 	if [[ "${CI}" == "CONCOURSE" ]]; then
 		# shellcheck disable=SC2086
 		"${MAVENW_BIN}" clean install -Psmoke -Dapplication.url="${applicationUrl}" -Dstubrunner.url="${stubrunnerUrl}" ${BUILD_OPTIONS} || (printTestResults && return 1)
@@ -118,7 +120,7 @@ function runSmokeTests() {
 function runE2eTests() {
 	local applicationUrl="${APPLICATION_URL}"
 	echo "Running e2e tests for application with url [${applicationUrl}]"
-
+chmod a+x mvnw
 	if [[ "${CI}" == "CONCOURSE" ]]; then
 		# shellcheck disable=SC2086
 		"${MAVENW_BIN}" clean install -Pe2e -Dapplication.url="${applicationUrl}" ${BUILD_OPTIONS} || (printTestResults && return 1)
