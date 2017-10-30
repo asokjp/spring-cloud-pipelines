@@ -119,8 +119,8 @@ function deployService() {
         otherservices)
 			deployOtherServices "${serviceName}"
         ;;
-		claimcontracts)
-		deploy_project  "https://github.com/asokjp/claim-contracts1"
+		claim-contracts)
+			deploy_project  "https://github.com/asokjp/claim-contracts1"
 		;;
 		*)
 			echo "Unknown service [${serviceType}]"
@@ -135,8 +135,12 @@ function deploy_project {
 
 	project_name="$( basename "${project_repo}" )"
 
-	echo "Deploying ${project_name} to Docker registry"
-
+	echo "Deploying ${project_name} to artifactory"
+if [[ $# -lt 1 ]]; then
+	DEST_DIR="$( mktemp -d )"
+else
+	DEST_DIR="$1"
+fi
 	pushd "${DEST_DIR}"
 	rm -rf "${project_name}"
 	git clone "${project_repo}" "${project_name}" && cd "${project_name}"
