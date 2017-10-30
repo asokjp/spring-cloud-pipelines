@@ -26,7 +26,7 @@ function logInToPaas() {
 	#rm -rf "${KUBE_CONFIG_PATH}" || echo "Failed to remove Kube config. Continuing with the script"
 	GCLOUD_PARENT_PATH="${GCLOUD_PARENT_PATH:-${HOME}/gcloud}"
 		GCLOUD_PATH="${GCLOUD_PATH:-${GCLOUD_PARENT_PATH}/google-cloud-sdk}"
-		if ![[ -x "${GCLOUD_PATH}" ]]; then
+		if ![ -x "${GCLOUD_PATH}" ]; then
 			echo "installing gcloud.."
 			downloadGCloud
 		fi
@@ -525,16 +525,17 @@ function prepareForSmokeTests() {
 	logInToPaas
 	local applicationPort
 	applicationPort="$(portFromKubernetes "${appName}")"
-	local stubrunnerAppName
-	stubrunnerAppName="stubrunner-${appName}"
-	local stubrunnerPort
-	stubrunnerPort="$(portFromKubernetes "${stubrunnerAppName}")"
+	#local stubrunnerAppName
+	#stubrunnerAppName="stubrunner-${appName}"
+	#local stubrunnerPort
+	#stubrunnerPort="$(portFromKubernetes "${stubrunnerAppName}")"
 	local applicationHost
 	applicationHost="$(applicationHost "${appName}")"
-	local stubRunnerUrl
-	stubRunnerUrl="$(applicationHost "${stubrunnerAppName}")"
+	#local stubRunnerUrl
+	#stubRunnerUrl="$(applicationHost "${stubrunnerAppName}")"
+	echo "application url: ${stubRunnerUrl}:${stubrunnerPort}"
 	export APPLICATION_URL="${applicationHost}:${applicationPort}"
-	export STUBRUNNER_URL="${stubRunnerUrl}:${stubrunnerPort}"
+	#export STUBRUNNER_URL="${stubRunnerUrl}:${stubrunnerPort}"
 }
 
 function prepareForE2eTests() {
