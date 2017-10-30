@@ -116,14 +116,33 @@ function deployService() {
 		configserver)
 			deployConfigServer "${serviceName}"
 		;;
-                otherservices)
+        otherservices)
 			deployOtherServices "${serviceName}"
-                ;;
+        ;;
+		claimcontracts)
+		deploy_project  "https://github.com/asokjp/claim-contracts1"
+		;;
 		*)
 			echo "Unknown service [${serviceType}]"
 			return 1
 		;;
 	esac
+}
+
+function deploy_project {
+	local project_repo="$1"
+	local project_name
+
+	project_name="$( basename "${project_repo}" )"
+
+	echo "Deploying ${project_name} to Docker registry"
+
+	pushd "${DEST_DIR}"
+	rm -rf "${project_name}"
+	git clone "${project_repo}" "${project_name}" && cd "${project_name}"
+	chmod a+x mvnw
+	./mvnw clean install 
+	popd
 }
 
 function configServerName() {
