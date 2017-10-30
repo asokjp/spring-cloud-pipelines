@@ -57,7 +57,7 @@ function downloadGCloud() {
 		GCLOUD_PATH="${GCLOUD_PATH:-${GCLOUD_PARENT_PATH}/google-cloud-sdk}"
 		if [[ -x "${GCLOUD_PATH}" ]]; then
 			echo "gcloud already downloaded - skipping..."
-			exit 0
+			exit
 		fi
 		wget -P "${GCLOUD_PARENT_PATH}/" \
                 "https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/${GCLOUD_ARCHIVE}"
@@ -136,17 +136,14 @@ function deploy_project {
 	project_name="$( basename "${project_repo}" )"
 
 	echo "Deploying ${project_name} to artifactory"
-if [[ $# -lt 1 ]]; then
-	DEST_DIR="$( mktemp -d )"
-else
-	DEST_DIR="$1"
-fi
-	pushd "${DEST_DIR}"
+	PROJECT_PARENT_PATH="${HOME}/${project_name}"
+	mkdir "${PROJECT_PARENT_PATH}"
+	pushd "${PROJECT_PARENT_PATH}"
 	rm -rf "${project_name}"
 	git clone "${project_repo}" "${project_name}" && cd "${project_name}"
 	chmod a+x mvnw
 	./mvnw clean install 
-	popd
+	popd || exit
 }
 
 function configServerName() {
