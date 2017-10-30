@@ -139,7 +139,7 @@ function deploy_project {
 	echo "Deploying ${project_name} to artifactory"
 	PROJECT_PARENT_PATH="${HOME}/${project_name}"
 	mkdir "${project_name}"
-	pushd ""${project_name}"
+	pushd "${project_name}"
 	rm -rf "${project_name}"
 	git clone "${project_repo}" && cd "${project_name}"
 	chmod a+x mvnw
