@@ -141,7 +141,7 @@ function deploy_project {
 	#mkdir "${PROJECT_PARENT_PATH}"
 	#pushd "${PROJECT_PARENT_PATH}"
 	rm -rf "${project_name}"
-	$git clone "${project_repo}" && cd "${project_name}"
+	git clone "${project_repo}" && cd "${project_name}"
 	chmod a+x mvnw
 	./mvnw clean install 
 	#popd || exit
