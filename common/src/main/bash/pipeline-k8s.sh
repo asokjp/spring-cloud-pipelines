@@ -26,7 +26,7 @@ function logInToPaas() {
 	#rm -rf "${KUBE_CONFIG_PATH}" || echo "Failed to remove Kube config. Continuing with the script"
 	GCLOUD_PARENT_PATH="${GCLOUD_PARENT_PATH:-${HOME}/gcloud}"
 		GCLOUD_PATH="${GCLOUD_PATH:-${GCLOUD_PARENT_PATH}/google-cloud-sdk}"
-		if ![ -x "${GCLOUD_PATH}" ]; then
+		if ! [ -x "${GCLOUD_PATH}" ]; then
 			echo "installing gcloud.."
 			downloadGCloud
 		fi
