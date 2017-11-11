@@ -122,6 +122,8 @@ function deployService() {
         ;;
 		claim-contracts)
 			deploy_project  "https://github.com/asokjp/claim-contracts1"
+		anthem-microservices-starter-build)
+		deploy_project  "https://github.com/asokjp/anthem-microservices-starter-build"
 		;;
 		*)
 			echo "Unknown service [${serviceType}]"
@@ -581,6 +583,7 @@ function waitForAppToStart() {
 	port="$(portFromKubernetes "${appName}")"
 	local applicationHost
 	applicationHost="$(applicationHost "${appName}")"
+	echo "application host is - ${applicationHost}" 
 	isAppRunning "${applicationHost}" "${port}"
 }
 
