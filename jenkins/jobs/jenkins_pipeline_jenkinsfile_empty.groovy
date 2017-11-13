@@ -26,10 +26,7 @@ dsl.pipelineJob('jenkins-pipeline-jenkinsfile-empty') {
 				stage 'End to end tests on stage'
 				echo 'Running end to end tests on stage'
 
-				stage 'Deploy to prod'
-				echo 'Deploying to prod green instance'
-				stage 'Complete switch over'
-				echo 'Disabling blue instance'
+				
 			}
 			""")
 		}

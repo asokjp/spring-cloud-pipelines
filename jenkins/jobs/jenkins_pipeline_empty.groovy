@@ -145,43 +145,6 @@ dsl.job("${projectName}-stage-env-test") {
 	}
 }
 
-dsl.job("${projectName}-prod-env-deploy") {
-	deliveryPipelineConfiguration('Prod', 'Deploy to prod')
-	wrappers {
-		deliveryPipelineVersion('${ENV,var="PIPELINE_VERSION"}', true)
-	}
-	steps {
-		shell("echo 'Deploying to prod env'")
-	}
-	publishers {
-		buildPipelineTrigger("${projectName}-prod-env-complete,${projectName}-prod-env-rollback") {
-			parameters {
-				currentBuild()
-			}
-		}
-	}
-}
-
-dsl.job("${projectName}-prod-env-rollback") {
-	deliveryPipelineConfiguration('Prod', 'Rollback to blue')
-	wrappers {
-		deliveryPipelineVersion('${ENV,var="PIPELINE_VERSION"}', true)
-	}
-	steps {
-		shell("echo 'Rolling back to green'")
-	}
-}
-
-dsl.job("${projectName}-prod-env-complete") {
-	deliveryPipelineConfiguration('Prod', 'Complete switch over')
-	wrappers {
-		deliveryPipelineVersion('${ENV,var="PIPELINE_VERSION"}', true)
-	}
-	steps {
-		shell("echo 'Disabling blue instance'")
-	}
-}
-
 dsl.deliveryPipelineView("${projectName}-pipeline") {
 	allowPipelineStart()
 	pipelineInstances(5)
