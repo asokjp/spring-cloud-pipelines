@@ -95,7 +95,8 @@ subprojects {
                     .exclude("**/build/**")
                     .each { File script ->
                     exec {
-                        commandLine pathToShellcheck, script
+                      //  commandLine pathToShellcheck, script
+					  commandLine "bash", new File(project.rootDir, "tools/build-helper.sh").path, "download-bats"
                     }
                 }
             }
