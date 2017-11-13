@@ -58,7 +58,7 @@ if (m2HomeFile.exists()) {
 }
 
 String modifiedSeedJob = jobScript.text
-	.replace('https://github.com/marcingrzejszczak', "https://github.com/${System.getenv('FORKED_ORG') ?: "marcingrzejszczak"}")
+	.replace('https://github.com/asokjp', "https://github.com/${System.getenv('FORKED_ORG') ?: "asokjp"}")
 // the default will work for K8S and docker-compose
 	.replace('http://artifactory', "http://${System.getenv('EXTERNAL_IP') ?: "artifactory"}")
 
@@ -161,7 +161,7 @@ if (mySqlCredsMissing) {
 
 println "Creating the seed job"
 modifiedSeedJob = modifiedSeedJob
-	.replace('scpipelines', "${System.getenv('DOCKER_REGISTRY_ORGANIZATION') ?: "scpipelines"}")
+	.replace('asokjp', "${System.getenv('DOCKER_REGISTRY_ORGANIZATION') ?: "asokjp"}")
 	.replace("change@me.com", dockerRegistryEmail)
 // remove::end[K8S]
 

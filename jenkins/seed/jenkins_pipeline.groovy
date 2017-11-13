@@ -3,11 +3,11 @@ import javaposse.jobdsl.dsl.DslFactory
 DslFactory factory = this
 
 // remove::start[CF]
-String repos = 'https://github.com/marcingrzejszczak/github-analytics,https://github.com/marcingrzejszczak/github-webhook'
+String repos = 'https://github.com/asokjp/claimant-service,https://github.com/asokjp/config-server1,https://github.com/asokjp/hello-world'
 // remove::end[CF]
 
 // remove::start[K8S]
-String kubernetesRepos = 'https://github.com/marcingrzejszczak/github-analytics-kubernetes,https://github.com/marcingrzejszczak/github-webhook-kubernetes'
+String kubernetesRepos = 'https://github.com/asokjp/claimant-service,https://github.com/asokjp/config-server1,https://github.com/asokjp/hello-world'
 // remove::end[K8S]
 
 // meta-seed
@@ -15,7 +15,7 @@ factory.job('meta-seed') {
 	scm {
 		git {
 			remote {
-				github('spring-cloud/spring-cloud-pipelines')
+				github('asokjp/spring-cloud-pipelines')
 			}
 			branch('${TOOLS_BRANCH}')
 			extensions {
@@ -50,7 +50,7 @@ factory.job('jenkins-pipeline-cf-seed') {
 	scm {
 		git {
 			remote {
-				github('spring-cloud/spring-cloud-pipelines')
+				github('asokjp/spring-cloud-pipelines')
 			}
 			branch('${TOOLS_BRANCH}')
 			extensions {
@@ -75,7 +75,7 @@ factory.job('jenkins-pipeline-cf-seed') {
 			stringParam('REPO_WITH_BINARIES_CREDENTIAL_ID', 'repo-with-binaries', "Credential ID of repo with binaries")
 			stringParam('GIT_EMAIL', 'email@example.com', "Email used to tag the repo")
 			stringParam('GIT_NAME', 'Pivo Tal', "Name used to tag the repo")
-			stringParam('APP_MEMORY_LIMIT', '256m', "How much memory should be used by the infra apps (Eureka, Stub Runner etc.) ")
+			stringParam('APP_MEMORY_LIMIT', '2048m', "How much memory should be used by the infra apps (Eureka, Stub Runner etc.) ")
 			stringParam('TOOLS_REPOSITORY', 'https://github.com/asokjp/spring-cloud-pipelines', "The URL containing pipeline functions repository")
 			stringParam('TOOLS_BRANCH', 'master', "The branch with pipeline functions")
 			booleanParam('AUTO_DEPLOY_TO_STAGE', false, 'Should deployment to stage be automatic')
@@ -119,7 +119,7 @@ factory.job('jenkins-pipeline-cf-declarative-seed') {
 	scm {
 		git {
 			remote {
-				github('spring-cloud/spring-cloud-pipelines')
+				github('asokjp/spring-cloud-pipelines')
 			}
 			branch('${TOOLS_BRANCH}')
 			extensions {
@@ -144,8 +144,8 @@ factory.job('jenkins-pipeline-cf-declarative-seed') {
 			stringParam('REPO_WITH_BINARIES_CREDENTIAL_ID', 'repo-with-binaries', "Credential ID of repo with binaries")
 			stringParam('GIT_EMAIL', 'email@example.com', "Email used to tag the repo")
 			stringParam('GIT_NAME', 'Pivo Tal', "Name used to tag the repo")
-			stringParam('APP_MEMORY_LIMIT', '256m', "How much memory should be used by the infra apps (Eureka, Stub Runner etc.) ")
-			stringParam('TOOLS_REPOSITORY', 'https://github.com/spring-cloud/spring-cloud-pipelines', "The URL containing pipeline functions repository")
+			stringParam('APP_MEMORY_LIMIT', '2048m', "How much memory should be used by the infra apps (Eureka, Stub Runner etc.) ")
+			stringParam('TOOLS_REPOSITORY', 'https://github.com/asokjp/spring-cloud-pipelines', "The URL containing pipeline functions repository")
 			stringParam('TOOLS_BRANCH', 'master', "The branch with pipeline functions")
 			booleanParam('AUTO_DEPLOY_TO_STAGE', false, 'Should deployment to stage be automatic')
 			booleanParam('AUTO_DEPLOY_TO_PROD', false, 'Should deployment to prod be automatic')
@@ -190,7 +190,7 @@ factory.job('jenkins-pipeline-k8s-seed') {
 	scm {
 		git {
 			remote {
-				github('spring-cloud/spring-cloud-pipelines')
+				github('asokjp/spring-cloud-pipelines')
 			}
 			branch('${TOOLS_BRANCH}')
 			extensions {
@@ -215,7 +215,7 @@ factory.job('jenkins-pipeline-k8s-seed') {
 			stringParam('REPO_WITH_BINARIES_CREDENTIAL_ID', 'repo-with-binaries', "Credential ID of repo with binaries")
 			stringParam('GIT_EMAIL', 'email@example.com', "Email used to tag the repo")
 			stringParam('GIT_NAME', 'Pivo Tal', "Name used to tag the repo")
-			stringParam('APP_MEMORY_LIMIT', '512m', "How much memory should be used by the infra apps (Eureka, Stub Runner etc.) ")
+			stringParam('APP_MEMORY_LIMIT', '2048m', "How much memory should be used by the infra apps (Eureka, Stub Runner etc.) ")
 			stringParam('TOOLS_REPOSITORY', 'https://github.com/asokjp/spring-cloud-pipelines', "The URL containing pipeline functions repository")
 			stringParam('TOOLS_BRANCH', 'master', "The branch with pipeline functions")
 			booleanParam('AUTO_DEPLOY_TO_STAGE', false, 'Should deployment to stage be automatic')
@@ -233,9 +233,9 @@ factory.job('jenkins-pipeline-k8s-seed') {
 			stringParam('DOCKER_REGISTRY_ORGANIZATION', 'asokjp', 'URL to Kubernetes cluster for test env')
 			stringParam('DOCKER_REGISTRY_URL', 'https://index.docker.io/v1/', 'URL to the docker registry')
 
-			stringParam('PAAS_TEST_API_URL', 'kubernetes:443', 'URL to Kubernetes cluster for test env')
-			stringParam('PAAS_STAGE_API_URL', 'kubernetes:443', 'URL to Kubernetes cluster for stage env')
-			stringParam('PAAS_PROD_API_URL', 'kubernetes:443', 'URL to Kubernetes cluster for prod env')
+			stringParam('PAAS_TEST_API_URL', '104.198.210.152:443', 'URL to Kubernetes cluster for test env')
+			stringParam('PAAS_STAGE_API_URL', '104.198.210.152:443', 'URL to Kubernetes cluster for stage env')
+			stringParam('PAAS_PROD_API_URL', '104.198.210.152:443', 'URL to Kubernetes cluster for prod env')
 			stringParam('PAAS_TEST_CA', '/var/run/secrets/kubernetes.io/serviceaccount/ca.crt', "Certificate Authority location for test env")
 			stringParam('PAAS_STAGE_CA', '/var/run/secrets/kubernetes.io/serviceaccount/ca.crt', "Certificate Authority location for stage env")
 			stringParam('PAAS_PROD_CA', '/var/run/secrets/kubernetes.io/serviceaccount/ca.crt', "Certificate Authority location for prod env")
@@ -251,15 +251,15 @@ factory.job('jenkins-pipeline-k8s-seed') {
 			stringParam('PAAS_TEST_CLIENT_TOKEN_ID', '', "ID of the credentials containing a token used by Kubectl for test env. Takes precedence over client key")
 			stringParam('PAAS_STAGE_CLIENT_TOKEN_ID', '', "ID of the credentials containing a token used by Kubectl for stage env. Takes precedence over client key")
 			stringParam('PAAS_PROD_CLIENT_TOKEN_ID', '', "ID of the credentials containing a token used by Kubectl for prod env. Takes precedence over client key")
-			stringParam('PAAS_TEST_CLUSTER_NAME', 'gke_third-apex-181907_us-central1-c_test', "Name of the cluster for test env")
-			stringParam('PAAS_STAGE_CLUSTER_NAME', 'gke_third-apex-181907_us-central1-c_test', "Name of the cluster for stage env")
-			stringParam('PAAS_PROD_CLUSTER_NAME', 'gke_third-apex-181907_us-central1-c_test', "Name of the cluster for prod env")
+			stringParam('PAAS_TEST_CLUSTER_NAME', 'gke_dulcet-hulling-185607_us-central1-c_test', "Name of the cluster for test env")
+			stringParam('PAAS_STAGE_CLUSTER_NAME', 'gke_dulcet-hulling-185607_us-central1-c_test', "Name of the cluster for stage env")
+			stringParam('PAAS_PROD_CLUSTER_NAME', 'gke_dulcet-hulling-185607_us-central1-c_test', "Name of the cluster for prod env")
 			stringParam('PAAS_TEST_CLUSTER_USERNAME', 'admin', "Username for the cluster for test env")
 			stringParam('PAAS_STAGE_CLUSTER_USERNAME', 'admin', "Username for the cluster for stage env")
 			stringParam('PAAS_PROD_CLUSTER_USERNAME', 'admin', "Username for the cluster for prod env")
-			stringParam('PAAS_TEST_SYSTEM_NAME', 'gke_third-apex-181907_us-central1-c_test', "Name for the system for test env")
-			stringParam('PAAS_STAGE_SYSTEM_NAME', 'gke_third-apex-181907_us-central1-c_test', "Name for the system for stage env")
-			stringParam('PAAS_PROD_SYSTEM_NAME', 'gke_third-apex-181907_us-central1-c_test', "Name for the system for prod env")
+			stringParam('PAAS_TEST_SYSTEM_NAME', 'gke_dulcet-hulling-185607_us-central1-c_test', "Name for the system for test env")
+			stringParam('PAAS_STAGE_SYSTEM_NAME', 'gke_dulcet-hulling-185607_us-central1-c_test', "Name for the system for stage env")
+			stringParam('PAAS_PROD_SYSTEM_NAME', 'gke_dulcet-hulling-185607_us-central1-c_test', "Name for the system for prod env")
 			stringParam('PAAS_TEST_NAMESPACE', 'sc-pipelines-test', 'Namespace for the test env')
 			stringParam('PAAS_STAGE_NAMESPACE', 'sc-pipelines-stage', 'Namespace for the stage env')
 			stringParam('PAAS_PROD_NAMESPACE', 'sc-pipelines-prod', 'Namespace for the prod env')
@@ -284,7 +284,7 @@ factory.job('jenkins-pipeline-k8s-declarative-seed') {
 	scm {
 		git {
 			remote {
-				github('spring-cloud/spring-cloud-pipelines')
+				github('asokjp/spring-cloud-pipelines')
 			}
 			branch('${TOOLS_BRANCH}')
 			extensions {
@@ -309,8 +309,8 @@ factory.job('jenkins-pipeline-k8s-declarative-seed') {
 			stringParam('REPO_WITH_BINARIES_CREDENTIAL_ID', 'repo-with-binaries', "Credential ID of repo with binaries")
 			stringParam('GIT_EMAIL', 'email@example.com', "Email used to tag the repo")
 			stringParam('GIT_NAME', 'Pivo Tal', "Name used to tag the repo")
-			stringParam('APP_MEMORY_LIMIT', '256m', "How much memory should be used by the infra apps (Eureka, Stub Runner etc.) ")
-			stringParam('TOOLS_REPOSITORY', 'https://github.com/spring-cloud/spring-cloud-pipelines', "The URL containing pipeline functions repository")
+			stringParam('APP_MEMORY_LIMIT', '2048m', "How much memory should be used by the infra apps (Eureka, Stub Runner etc.) ")
+			stringParam('TOOLS_REPOSITORY', 'https://github.com/asokjp/spring-cloud-pipelines', "The URL containing pipeline functions repository")
 			stringParam('TOOLS_BRANCH', 'master', "The branch with pipeline functions")
 			booleanParam('AUTO_DEPLOY_TO_STAGE', false, 'Should deployment to stage be automatic')
 			booleanParam('AUTO_DEPLOY_TO_PROD', false, 'Should deployment to prod be automatic')
@@ -318,42 +318,42 @@ factory.job('jenkins-pipeline-k8s-declarative-seed') {
 			booleanParam('DB_ROLLBACK_STEP_REQUIRED', true, 'Should DB rollback step be present')
 			booleanParam('DEPLOY_TO_STAGE_STEP_REQUIRED', true, 'Should deploy to stage step be present')
 			stringParam('PAAS_TYPE', 'k8s', "Which PAAS do you want to choose")
-			booleanParam('KUBERNETES_MINIKUBE', true, 'Will you connect to Minikube?')
+			booleanParam('KUBERNETES_MINIKUBE', false, 'Will you connect to Minikube?')
 			stringParam('MYSQL_ROOT_CREDENTIAL_ID', "mysql-root", 'Credential ID of MYSQL root user')
 			stringParam('MYSQL_CREDENTIAL_ID', "mysql", 'Credential ID of MYSQL user')
 			stringParam('DOCKER_REGISTRY_CREDENTIAL_ID', 'docker-registry', "Credential ID of docker registry")
 			stringParam('DOCKER_SERVER_ID', 'docker-repo', "Docker Server ID")
 			stringParam('DOCKER_EMAIL', 'change@me.com', "Email used to connect to Docker registry")
-			stringParam('DOCKER_REGISTRY_ORGANIZATION', 'scpipelines', 'URL to Kubernetes cluster for test env')
+			stringParam('DOCKER_REGISTRY_ORGANIZATION', 'asokjp', 'URL to Kubernetes cluster for test env')
 			stringParam('DOCKER_REGISTRY_URL', 'https://index.docker.io/v1/', 'URL to the docker registry')
 
-			stringParam('PAAS_TEST_API_URL', '192.168.99.100:8443', 'URL to Kubernetes cluster for test env')
-			stringParam('PAAS_STAGE_API_URL', '192.168.99.100:8443', 'URL to Kubernetes cluster for stage env')
-			stringParam('PAAS_PROD_API_URL', '192.168.99.100:8443', 'URL to Kubernetes cluster for prod env')
-			stringParam('PAAS_TEST_CA', '/usr/share/jenkins/cert/ca.crt', "Certificate Authority location for test env")
-			stringParam('PAAS_STAGE_CA', '/usr/share/jenkins/cert/ca.crt', "Certificate Authority location for stage env")
-			stringParam('PAAS_PROD_CA', '/usr/share/jenkins/cert/ca.crt', "Certificate Authority location for prod env")
-			stringParam('PAAS_TEST_CLIENT_CERT', '/usr/share/jenkins/cert/apiserver.crt', "Client Certificate location for test env")
-			stringParam('PAAS_STAGE_CLIENT_CERT', '/usr/share/jenkins/cert/apiserver.crt', "Client Certificate location for stage env")
-			stringParam('PAAS_PROD_CLIENT_CERT', '/usr/share/jenkins/cert/apiserver.crt', "Client Certificate location for prod env")
-			stringParam('PAAS_TEST_CLIENT_KEY', '/usr/share/jenkins/cert/apiserver.key', "Client Key location for test env")
-			stringParam('PAAS_STAGE_CLIENT_KEY', '/usr/share/jenkins/cert/apiserver.key', "Client Key location for stage env")
-			stringParam('PAAS_PROD_CLIENT_KEY', '/usr/share/jenkins/cert/apiserver.key', "Client Key location for prod env")
-			stringParam('PAAS_TEST_CLIENT_TOKEN_PATH', '', "Path to the file containing the token for test env")
-			stringParam('PAAS_STAGE_CLIENT_TOKEN_PATH', '', "Path to the file containing the token for stage env")
-			stringParam('PAAS_PROD_CLIENT_TOKEN_PATH', '', "Path to the file containing the token for prod env")
+			stringParam('PAAS_TEST_API_URL', '104.198.210.152:443', 'URL to Kubernetes cluster for test env')
+			stringParam('PAAS_STAGE_API_URL', '104.198.210.152:443', 'URL to Kubernetes cluster for stage env')
+			stringParam('PAAS_PROD_API_URL', '104.198.210.152:443', 'URL to Kubernetes cluster for prod env')
+			stringParam('PAAS_TEST_CA', '/var/run/secrets/kubernetes.io/serviceaccount/ca.crt', "Certificate Authority location for test env")
+			stringParam('PAAS_STAGE_CA', '/var/run/secrets/kubernetes.io/serviceaccount/ca.crt', "Certificate Authority location for stage env")
+			stringParam('PAAS_PROD_CA', '/var/run/secrets/kubernetes.io/serviceaccount/ca.crt', "Certificate Authority location for prod env")
+			stringParam('PAAS_TEST_CLIENT_CERT', '', "Client Certificate location for test env")
+			stringParam('PAAS_STAGE_CLIENT_CERT', '', "Client Certificate location for stage env")
+			stringParam('PAAS_PROD_CLIENT_CERT', '', "Client Certificate location for prod env")
+			stringParam('PAAS_TEST_CLIENT_KEY', '', "Client Key location for test env")
+			stringParam('PAAS_STAGE_CLIENT_KEY', '', "Client Key location for stage env")
+			stringParam('PAAS_PROD_CLIENT_KEY', '', "Client Key location for prod env")
+			stringParam('PAAS_TEST_CLIENT_TOKEN_PATH', '/var/run/secrets/kubernetes.io/serviceaccount/token', "Path to the file containing the token for test env")
+			stringParam('PAAS_STAGE_CLIENT_TOKEN_PATH', '/var/run/secrets/kubernetes.io/serviceaccount/token', "Path to the file containing the token for stage env")
+			stringParam('PAAS_PROD_CLIENT_TOKEN_PATH', '/var/run/secrets/kubernetes.io/serviceaccount/token', "Path to the file containing the token for prod env")
 			stringParam('PAAS_TEST_CLIENT_TOKEN_ID', '', "ID of the credentials containing a token used by Kubectl for test env. Takes precedence over client key")
 			stringParam('PAAS_STAGE_CLIENT_TOKEN_ID', '', "ID of the credentials containing a token used by Kubectl for stage env. Takes precedence over client key")
 			stringParam('PAAS_PROD_CLIENT_TOKEN_ID', '', "ID of the credentials containing a token used by Kubectl for prod env. Takes precedence over client key")
-			stringParam('PAAS_TEST_CLUSTER_NAME', 'minikube', "Name of the cluster for test env")
-			stringParam('PAAS_STAGE_CLUSTER_NAME', 'minikube', "Name of the cluster for stage env")
-			stringParam('PAAS_PROD_CLUSTER_NAME', 'minikube', "Name of the cluster for prod env")
-			stringParam('PAAS_TEST_CLUSTER_USERNAME', 'minikube', "Username for the cluster for test env")
-			stringParam('PAAS_STAGE_CLUSTER_USERNAME', 'minikube', "Username for the cluster for stage env")
-			stringParam('PAAS_PROD_CLUSTER_USERNAME', 'minikube', "Username for the cluster for prod env")
-			stringParam('PAAS_TEST_SYSTEM_NAME', 'minikube', "Name for the system for test env")
-			stringParam('PAAS_STAGE_SYSTEM_NAME', 'minikube', "Name for the system for stage env")
-			stringParam('PAAS_PROD_SYSTEM_NAME', 'minikube', "Name for the system for prod env")
+			stringParam('PAAS_TEST_CLUSTER_NAME', 'gke_dulcet-hulling-185607_us-central1-c_test', "Name of the cluster for test env")
+			stringParam('PAAS_STAGE_CLUSTER_NAME', 'gke_dulcet-hulling-185607_us-central1-c_test', "Name of the cluster for stage env")
+			stringParam('PAAS_PROD_CLUSTER_NAME', 'gke_dulcet-hulling-185607_us-central1-c_test', "Name of the cluster for prod env")
+			stringParam('PAAS_TEST_CLUSTER_USERNAME', 'admin', "Username for the cluster for test env")
+			stringParam('PAAS_STAGE_CLUSTER_USERNAME', 'admin', "Username for the cluster for stage env")
+			stringParam('PAAS_PROD_CLUSTER_USERNAME', 'admin', "Username for the cluster for prod env")
+			stringParam('PAAS_TEST_SYSTEM_NAME', 'gke_dulcet-hulling-185607_us-central1-c_test', "Name for the system for test env")
+			stringParam('PAAS_STAGE_SYSTEM_NAME', 'gke_dulcet-hulling-185607_us-central1-c_test', "Name for the system for stage env")
+			stringParam('PAAS_PROD_SYSTEM_NAME', 'gke_dulcet-hulling-185607_us-central1-c_test', "Name for the system for prod env")
 			stringParam('PAAS_TEST_NAMESPACE', 'sc-pipelines-test', 'Namespace for the test env')
 			stringParam('PAAS_STAGE_NAMESPACE', 'sc-pipelines-stage', 'Namespace for the stage env')
 			stringParam('PAAS_PROD_NAMESPACE', 'sc-pipelines-prod', 'Namespace for the prod env')
