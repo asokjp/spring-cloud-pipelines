@@ -35,7 +35,7 @@ boolean rollbackStep = binding.variables["DB_ROLLBACK_STEP_REQUIRED"] == null ? 
 boolean stageStep = binding.variables["DEPLOY_TO_STAGE_STEP_REQUIRED"] == null ? true : Boolean.parseBoolean(binding.variables["DEPLOY_TO_STAGE_STEP_REQUIRED"])
 String scriptsDir = binding.variables["SCRIPTS_DIR"] ?: "${WORKSPACE}/common/src/main/bash"
 // TODO: Automate customization of this value
-String toolsRepo = binding.variables["TOOLS_REPOSITORY"] ?: "https://github.com/spring-cloud/spring-cloud-pipelines"
+String toolsRepo = binding.variables["TOOLS_REPOSITORY"] ?: "https://github.com/asokjp/spring-cloud-pipelines1"
 String toolsBranch = binding.variables["TOOLS_BRANCH"] ?: "master"
 // TODO: K8S - consider parametrization
 // remove::start[K8S]
@@ -46,8 +46,8 @@ String mySqlCredential = binding.variables["MYSQL_CREDENTIAL_ID"] ?: ""
 
 // we're parsing the REPOS parameter to retrieve list of repos to build
 String repos = binding.variables["REPOS"] ?:
-		["https://github.com/marcingrzejszczak/github-analytics",
-		 "https://github.com/marcingrzejszczak/github-webhook"].join(",")
+		["https://github.com/asokjp/claimant-service",
+		 "https://github.com/asokjp/config-server1","https://github.com/asokjp/hello-world"].join(",")
 List<String> parsedRepos = repos.split(",")
 parsedRepos.each {
 	String gitRepoName = it.split('/').last() - '.git'
@@ -637,175 +637,6 @@ parsedRepos.each {
 					}
 				}
 			}
-		}
-	}
-
-	dsl.job("${projectName}-prod-env-deploy") {
-		deliveryPipelineConfiguration('Prod', 'Deploy to prod')
-		wrappers {
-			deliveryPipelineVersion('${ENV,var="PIPELINE_VERSION"}', true)
-			maskPasswords()
-			environmentVariables(defaults.defaultEnvVars)
-			credentialsBinding {
-				// remove::start[CF]
-				if (cfProdCredentialId) usernamePassword('PAAS_PROD_USERNAME', 'PAAS_PROD_PASSWORD', cfProdCredentialId)
-				// remove::end[CF]
-				// remove::start[K8S]
-				if (k8sProdTokenCredentialId) string("TOKEN", k8sProdTokenCredentialId)
-				// remove::end[K8S]
-			}
-			timestamps()
-			colorizeOutput()
-			maskPasswords()
-			timeout {
-				noActivity(300)
-				failBuild()
-				writeDescription('Build failed due to timeout after {0} minutes of inactivity')
-			}
-		}
-		scm {
-			git {
-				remote {
-					name('origin')
-					url(fullGitRepo)
-					branch('dev/${PIPELINE_VERSION}')
-					credentials(gitUseSshKey ? gitSshCredentials : gitCredentials)
-				}
-				extensions {
-					wipeOutWorkspace()
-				}
-			}
-		}
-		configure { def project ->
-			// Adding user email and name here instead of global settings
-			project / 'scm' / 'extensions' << 'hudson.plugins.git.extensions.impl.UserIdentity' {
-				'email'(gitEmail)
-				'name'(gitName)
-			}
-		}
-		steps {
-			shell("""#!/bin/bash
-		rm -rf .git/tools && git clone -b ${toolsBranch} --single-branch ${toolsRepo} .git/tools 
-		""")
-			shell('''#!/bin/bash
-		${WORKSPACE}/.git/tools/common/src/main/bash/prod_deploy.sh
-		''')
-		}
-		publishers {
-			// remove::start[K8S]
-			archiveArtifacts {
-				pattern("**/build/**/k8s/*.yml")
-				pattern("**/target/**/k8s/*.yml")
-				// remove::start[CF]
-				allowEmpty()
-				// remove::end[CF]
-			}
-			// end::start[K8S]
-			buildPipelineTrigger("${projectName}-prod-env-complete,${projectName}-prod-env-rollback") {
-				parameters {
-					currentBuild()
-				}
-			}
-			git {
-				forcePush(true)
-				pushOnlyIfSuccess()
-				tag('origin', "prod/\${PIPELINE_VERSION}") {
-					create()
-					update()
-				}
-			}
-		}
-	}
-
-	dsl.job("${projectName}-prod-env-rollback") {
-		deliveryPipelineConfiguration('Prod', 'Rollback')
-		wrappers {
-			deliveryPipelineVersion('${ENV,var="PIPELINE_VERSION"}', true)
-			maskPasswords()
-			environmentVariables(defaults.defaultEnvVars)
-			credentialsBinding {
-				// remove::start[CF]
-				if (cfProdCredentialId) usernamePassword('PAAS_PROD_USERNAME', 'PAAS_PROD_PASSWORD', cfProdCredentialId)
-				// remove::end[CF]
-				// remove::start[K8S]
-				if(k8sTestTokenCredentialId) string("TOKEN", k8sTestTokenCredentialId)
-				// remove::end[K8S]
-			}
-			timestamps()
-			colorizeOutput()
-			maskPasswords()
-			timeout {
-				noActivity(300)
-				failBuild()
-				writeDescription('Build failed due to timeout after {0} minutes of inactivity')
-			}
-		}
-		scm {
-			git {
-				remote {
-					name('origin')
-					url(fullGitRepo)
-					branch('dev/${PIPELINE_VERSION}')
-					credentials(gitUseSshKey ? gitSshCredentials : gitCredentials)
-				}
-				extensions {
-					wipeOutWorkspace()
-				}
-			}
-		}
-		steps {
-			shell("""#!/bin/bash
-		rm -rf .git/tools && git clone -b ${toolsBranch} --single-branch ${toolsRepo} .git/tools 
-		""")
-			shell('''#!/bin/bash
-		${WORKSPACE}/.git/tools/common/src/main/bash/prod_rollback.sh
-		''')
-		}
-	}
-
-	dsl.job("${projectName}-prod-env-complete") {
-		deliveryPipelineConfiguration('Prod', 'Complete switch over')
-		wrappers {
-			deliveryPipelineVersion('${ENV,var="PIPELINE_VERSION"}', true)
-			maskPasswords()
-			environmentVariables(defaults.defaultEnvVars)
-			credentialsBinding {
-				// remove::start[CF]
-				if (cfProdCredentialId) usernamePassword('PAAS_PROD_USERNAME', 'PAAS_PROD_PASSWORD', cfProdCredentialId)
-				// remove::end[CF]
-				// remove::start[K8S]
-				if(k8sTestTokenCredentialId) string("TOKEN", k8sTestTokenCredentialId)
-				// remove::end[K8S]
-			}
-			timestamps()
-			colorizeOutput()
-			maskPasswords()
-			timeout {
-				noActivity(300)
-				failBuild()
-				writeDescription('Build failed due to timeout after {0} minutes of inactivity')
-			}
-		}
-		scm {
-			git {
-				remote {
-					name('origin')
-					url(fullGitRepo)
-					branch('dev/${PIPELINE_VERSION}')
-					credentials(gitUseSshKey ? gitSshCredentials : gitCredentials)
-				}
-				extensions {
-					wipeOutWorkspace()
-				}
-			}
-		}
-		steps {
-			shell("""#!/bin/bash
-		rm -rf .git/tools && git clone -b ${toolsBranch} --single-branch ${toolsRepo} .git/tools 
-		""")
-			shell('''#!/bin/bash
-		${WORKSPACE}/.git/tools/common/src/main/bash/prod_complete.sh
-		''')
 		}
 	}
 }

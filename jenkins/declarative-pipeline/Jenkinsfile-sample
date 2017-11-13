@@ -196,49 +196,6 @@ pipeline {
 				'''
 			}
 		}
-
-		stage("Deploy to prod") {
-			when {
-				environment name: 'DEPLOY_TO_PROD',
-				value: 'yes'
-			}
-			steps {
-				sh """
-					${
-						if (Boolean.parseBoolean(env.GIT_USE_SSH_KEY) == Boolean.TRUE) {
-							return """
-							eval "\$(ssh-agent -s)"
-							ssh-add /usr/share/jenkins/gitsshkey
-							"""
-						} else {
-							return """
-							# https://issues.jenkins-ci.org/browse/JENKINS-28335
-							git config --local credential.helper cache
-							echo 'protocol=https\nhost=github.com\nusername=${GIT_USERNAME}\npassword=${GIT_PASSWORD}\n\n' | git credential approve
-							"""
-						}
-					}
-					git tag prod/\${PIPELINE_VERSION}
-					git push --tags
-					"""
-
-				sh '''#!/bin/bash
-				${WORKSPACE}@tools/common/src/main/bash/prod_deploy.sh
-				'''
-			}
-		}
-
-		stage("Complete switch over") {
-			when {
-				environment name: 'DEPLOY_TO_PROD',
-				value: 'yes'
-			}
-			steps {
-				sh '''#!/bin/bash
-				${WORKSPACE}@tools/common/src/main/bash/prod_complete.sh
-				'''
-			}
-		}
 	}
 	post {
 		always {
