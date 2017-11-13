@@ -34,6 +34,7 @@ task bats {
             standardOutput = new org.apache.tools.ant.util.TeeOutputStream(
                 new FileOutputStream(outputTapFile), System.out)
           //  commandLine pathToBats, '-t', 'src/test/bats'
+		  commandLine "bash", new File(project.rootDir, "tools/build-helper.sh").path, "download-bats"
         }
     }
 }
