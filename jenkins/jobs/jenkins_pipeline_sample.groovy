@@ -620,7 +620,7 @@ parsedRepos.each {
 			}
 		}
 	}
-}
+if(projectName.equalsIgnoreCase(prod-env-deploy-pipeline)) {
 	dsl.job("prod-env-deploy") {
 		deliveryPipelineConfiguration('Prod', 'Deploy to prod')
 		wrappers {
@@ -789,7 +789,8 @@ parsedRepos.each {
 		''')
 		}
 	}
-
+	}
+}	
 
 //  ======= JOBS =======
 
