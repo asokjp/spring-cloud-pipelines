@@ -35,7 +35,7 @@ boolean rollbackStep = binding.variables["DB_ROLLBACK_STEP_REQUIRED"] == null ? 
 boolean stageStep = binding.variables["DEPLOY_TO_STAGE_STEP_REQUIRED"] == null ? true : Boolean.parseBoolean(binding.variables["DEPLOY_TO_STAGE_STEP_REQUIRED"])
 String scriptsDir = binding.variables["SCRIPTS_DIR"] ?: "${WORKSPACE}/common/src/main/bash"
 // TODO: Automate customization of this value
-String toolsRepo = binding.variables["TOOLS_REPOSITORY"] ?: "https://github.com/asokjp/spring-cloud-pipelines"
+String toolsRepo = binding.variables["TOOLS_REPOSITORY"] ?: "https://asokjp/spring-cloud/spring-cloud-pipelines"
 String toolsBranch = binding.variables["TOOLS_BRANCH"] ?: "master"
 // TODO: K8S - consider parametrization
 // remove::start[K8S]
@@ -43,7 +43,7 @@ String mySqlRootCredential = binding.variables["MYSQL_ROOT_CREDENTIAL_ID"] ?: ""
 String mySqlCredential = binding.variables["MYSQL_CREDENTIAL_ID"] ?: ""
 // remove::end[K8S]
 
-
+String prodDeployrepo="https://github.com/asokjp/prod-env-deploy.git"
 // we're parsing the REPOS parameter to retrieve list of repos to build
 String repos = binding.variables["REPOS"] ?:
 		["https://github.com/asokjp/claimant-service",
@@ -618,35 +618,10 @@ parsedRepos.each {
 		${WORKSPACE}/.git/tools/common/src/main/bash/stage_e2e.sh
 		''')
 			}
-			publishers {
-				archiveJunit(testReports)
-				String nextJob = "${projectName}-prod-env-deploy"
-				if (autoProd) {
-					downstreamParameterized {
-						trigger(nextJob) {
-							parameters {
-								currentBuild()
-							}
-						}
-					}
-				} else {
-					buildPipelineTrigger(nextJob) {
-						parameters {
-							currentBuild()
-						}
-					}
-				}
-			}
 		}
 	}
 }
-
-//  ======= JOBS =======
-
-//  -----------production deployment jobs---------
-
-if(projectName.equals("prod-deploy-pipeline")) {
-	dsl.job("${projectName}-prod-env-deploy") {
+	dsl.job("prod-env-deploy") {
 		deliveryPipelineConfiguration('Prod', 'Deploy to prod')
 		wrappers {
 			deliveryPipelineVersion('${ENV,var="PIPELINE_VERSION"}', true)
@@ -673,7 +648,7 @@ if(projectName.equals("prod-deploy-pipeline")) {
 			git {
 				remote {
 					name('origin')
-					url(fullGitRepo)
+					url(prodDeployrepo)
 					branch('dev/${PIPELINE_VERSION}')
 					credentials(gitUseSshKey ? gitSshCredentials : gitCredentials)
 				}
@@ -707,7 +682,7 @@ if(projectName.equals("prod-deploy-pipeline")) {
 				// remove::end[CF]
 			}
 			// end::start[K8S]
-			buildPipelineTrigger("${projectName}-prod-env-complete,${projectName}-prod-env-rollback") {
+			buildPipelineTrigger("prod-env-complete,prod-env-rollback") {
 				parameters {
 					currentBuild()
 				}
@@ -723,7 +698,7 @@ if(projectName.equals("prod-deploy-pipeline")) {
 		}
 	}
 
-	dsl.job("${projectName}-prod-env-rollback") {
+	dsl.job("prod-env-rollback") {
 		deliveryPipelineConfiguration('Prod', 'Rollback')
 		wrappers {
 			deliveryPipelineVersion('${ENV,var="PIPELINE_VERSION"}', true)
@@ -750,7 +725,7 @@ if(projectName.equals("prod-deploy-pipeline")) {
 			git {
 				remote {
 					name('origin')
-					url(fullGitRepo)
+					url(prodDeployrepo)
 					branch('dev/${PIPELINE_VERSION}')
 					credentials(gitUseSshKey ? gitSshCredentials : gitCredentials)
 				}
@@ -769,7 +744,7 @@ if(projectName.equals("prod-deploy-pipeline")) {
 		}
 	}
 
-	dsl.job("${projectName}-prod-env-complete") {
+	dsl.job("prod-env-complete") {
 		deliveryPipelineConfiguration('Prod', 'Complete switch over')
 		wrappers {
 			deliveryPipelineVersion('${ENV,var="PIPELINE_VERSION"}', true)
@@ -796,7 +771,7 @@ if(projectName.equals("prod-deploy-pipeline")) {
 			git {
 				remote {
 					name('origin')
-					url(fullGitRepo)
+					url(prodDeployrepo)
 					branch('dev/${PIPELINE_VERSION}')
 					credentials(gitUseSshKey ? gitSshCredentials : gitCredentials)
 				}
@@ -814,8 +789,9 @@ if(projectName.equals("prod-deploy-pipeline")) {
 		''')
 		}
 	}
-}
 
+
+//  ======= JOBS =======
 
 /**
  * A helper class to provide delegation for Closures. That way your IDE will help you in defining parameters.
@@ -859,15 +835,15 @@ class PipelineDefaults {
 		setIfPresent(envs, variables, "PAAS_TEST_API_URL")
 		setIfPresent(envs, variables, "PAAS_STAGE_API_URL")
 		setIfPresent(envs, variables, "PAAS_PROD_API_URL")
-		setIfPresent(envs, variables, "PAAS_TEST_CA")
-		setIfPresent(envs, variables, "PAAS_STAGE_CA")
-		setIfPresent(envs, variables, "PAAS_PROD_CA")
-		setIfPresent(envs, variables, "PAAS_TEST_CLIENT_CERT")
-		setIfPresent(envs, variables, "PAAS_STAGE_CLIENT_CERT")
-		setIfPresent(envs, variables, "PAAS_PROD_CLIENT_CERT")
-		setIfPresent(envs, variables, "PAAS_TEST_CLIENT_KEY")
-		setIfPresent(envs, variables, "PAAS_STAGE_CLIENT_KEY")
-		setIfPresent(envs, variables, "PAAS_PROD_CLIENT_KEY")
+		setIfPresent(envs, variables, "PAAS_TEST_CA_PATH")
+		setIfPresent(envs, variables, "PAAS_STAGE_CA_PATH")
+		setIfPresent(envs, variables, "PAAS_PROD_CA_PATH")
+		setIfPresent(envs, variables, "PAAS_TEST_CLIENT_CERT_PATH")
+		setIfPresent(envs, variables, "PAAS_STAGE_CLIENT_CERT_PATH")
+		setIfPresent(envs, variables, "PAAS_PROD_CLIENT_CERT_PATH")
+		setIfPresent(envs, variables, "PAAS_TEST_CLIENT_KEY_PATH")
+		setIfPresent(envs, variables, "PAAS_STAGE_CLIENT_KEY_PATH")
+		setIfPresent(envs, variables, "PAAS_PROD_CLIENT_KEY_PATH")
 		setIfPresent(envs, variables, "PAAS_TEST_CLIENT_TOKEN_PATH")
 		setIfPresent(envs, variables, "PAAS_STAGE_CLIENT_TOKEN_PATH")
 		setIfPresent(envs, variables, "PAAS_PROD_CLIENT_TOKEN_PATH")
