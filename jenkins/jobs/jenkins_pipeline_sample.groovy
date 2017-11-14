@@ -83,8 +83,9 @@ parsedRepos.each {
 	}
 	
 	String projectName = "${gitRepoName}-pipeline"
-
+    System.out.println (projectName)
 	//  ======= JOBS =======
+if(!projectName.equalsIgnoreCase("prod-env-deploy-pipeline")) {
 	dsl.job("${projectName}-build") {
 		deliveryPipelineConfiguration('Build', 'Build and Upload')
 		triggers {
@@ -620,6 +621,7 @@ parsedRepos.each {
 			}
 		}
 	}
+}
 if(projectName.equalsIgnoreCase("prod-env-deploy-pipeline")) {
 	dsl.job("prod-env-deploy") {
 		deliveryPipelineConfiguration('Prod', 'Deploy to prod')
