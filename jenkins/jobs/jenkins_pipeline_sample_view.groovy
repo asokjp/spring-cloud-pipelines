@@ -4,8 +4,8 @@ DslFactory dsl = this
 
 // we're parsing the REPOS parameter to retrieve list of repos to build
 String repos = binding.variables['REPOS'] ?:
-		['https://github.com/marcingrzejszczak/github-analytics',
-		 'https://github.com/marcingrzejszczak/github-webhook'].join(',')
+		['https://github.com/asokjp/claimant-service',
+		 'https://github.com/asokjp/config-server1','https://github.com/asokjp/hello-world'].join(',')
 List<String> parsedRepos = repos.split(',')
 parsedRepos.each {
 	String gitRepoName = it.split('/').last() - '.git'
