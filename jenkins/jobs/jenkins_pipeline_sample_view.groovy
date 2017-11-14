@@ -28,7 +28,9 @@ parsedRepos.each {
 			gitRepoName = it.substring(it.lastIndexOf("/") + 1, customBranchIndex)
 		}
 	}
-	String projectName = "${gitRepoName}-pipeline"
+String projectName = "${gitRepoName}-pipeline"	
+if(!projectName.equalsIgnoreCase("prod-env-deploy-pipeline")) {
+
 	dsl.deliveryPipelineView(projectName) {
 		allowPipelineStart()
 		pipelineInstances(5)
@@ -50,4 +52,28 @@ parsedRepos.each {
 			(it / 'pagingEnabled').setValue(true)
 		}
 	}
+	}
+else {
+	dsl.deliveryPipelineView(projectName) {
+		allowPipelineStart()
+		pipelineInstances(5)
+		showAggregatedPipeline(false)
+		columns(1)
+		updateInterval(5)
+		enableManualTriggers()
+		showAvatars()
+		showChangeLog()
+		pipelines {
+			component("Deployment", "prod-env-deploy-pipeline")
+		}
+		allowRebuild()
+		showDescription()
+		showPromotions()
+		showTotalBuildTime()
+		configure {
+			(it / 'showTestResults').setValue(true)
+			(it / 'pagingEnabled').setValue(true)
+		}
+	}
 }
+}	
