@@ -64,7 +64,7 @@ else {
 		showAvatars()
 		showChangeLog()
 		pipelines {
-			component("Deployment", "prod-env-deploy-pipeline")
+			component("Deployment", "prod-env-deploy")
 		}
 		allowRebuild()
 		showDescription()
