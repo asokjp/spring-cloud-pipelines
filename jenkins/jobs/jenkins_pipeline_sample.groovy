@@ -726,7 +726,8 @@ parsedRepos1.each {
 			branchName1 = it.substring(customBranchIndex1 + 1)
 		}
 	}
-			git {
+			scm {
+				git {
 				remote {
 					name('origin')
 					url(fullGitRepo)
@@ -736,6 +737,7 @@ parsedRepos1.each {
 				extensions {
 					wipeOutWorkspace()
 				}
+			}
 			}
 			git {
 				forcePush(true)
