@@ -11,7 +11,7 @@ import spock.lang.Unroll
  * Tests that all dsl scripts in the jobs directory will compile.
  */
 class JobScriptsSpec extends Specification {
-
+/**
 	@Unroll
 	def 'should compile script #file.name'() {
 		given:
@@ -360,6 +360,7 @@ class JobScriptsSpec extends Specification {
 			return it
 		}
 	}
+*/
 /**
 	def 'should automatically deploy to prod if that option is checked'() {
 		given:
