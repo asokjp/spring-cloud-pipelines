@@ -692,7 +692,7 @@ if(projectName.equalsIgnoreCase("prod-env-deploy-pipeline")) {
 			
 			String repos = binding.variables["REPOS"] ?:
 		["https://github.com/asokjp/claimant-service",
-		 "https://github.com/asokjp/config-server1","https://github.com/asokjp/hello-world","https://github.com/asokjp/prod-env-deploy"].join(",")
+		 "https://github.com/asokjp/config-server1","https://github.com/asokjp/hello-world"].join(",")
 List<String> parsedRepos = repos.split(",")
 parsedRepos.each {
 	String gitRepoName = it.split('/').last() - '.git'
