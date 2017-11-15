@@ -99,7 +99,7 @@ class JobScriptsSpec extends Specification {
 				return it
 			}
 	}
-/**
+
 	def 'should parse REPOS with no special entries for ssh based authentication'() {
 		given:
 			MemoryJobManagement jm = new MemoryJobManagement()
@@ -125,7 +125,7 @@ class JobScriptsSpec extends Specification {
 				return it
 			}
 	}
-*/
+
 	def 'should parse REPOS with custom project name only'() {
 		given:
 			MemoryJobManagement jm = new MemoryJobManagement()
