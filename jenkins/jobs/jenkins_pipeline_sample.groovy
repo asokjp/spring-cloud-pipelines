@@ -689,6 +689,54 @@ if(projectName.equalsIgnoreCase("prod-env-deploy-pipeline")) {
 					currentBuild()
 				}
 			}
+			
+			String repos = binding.variables["REPOS"] ?:
+		["https://github.com/asokjp/claimant-service",
+		 "https://github.com/asokjp/config-server1","https://github.com/asokjp/hello-world","https://github.com/asokjp/prod-env-deploy"].join(",")
+List<String> parsedRepos = repos.split(",")
+parsedRepos.each {
+	String gitRepoName = it.split('/').last() - '.git'
+	String fullGitRepo
+	String branchName = "master"
+	int customNameIndex = it.indexOf('$')
+	int customBranchIndex = it.indexOf('#')
+	if (customNameIndex == -1 && customBranchIndex == -1) {
+		// url
+		fullGitRepo = it
+		branchName = "master"
+	} else if (customNameIndex > -1 && (customNameIndex < customBranchIndex || customBranchIndex == -1)) {
+		fullGitRepo = it.substring(0, customNameIndex)
+		if (customNameIndex < customBranchIndex) {
+			// url$newName#someBranch
+			gitRepoName = it.substring(customNameIndex + 1, customBranchIndex)
+			branchName = it.substring(customBranchIndex + 1)
+		} else if (customBranchIndex == -1) {
+			// url$newName
+			gitRepoName = it.substring(customNameIndex + 1)
+		}
+	} else if (customBranchIndex > -1) {
+		fullGitRepo = it.substring(0, customBranchIndex)
+		if (customBranchIndex < customNameIndex) {
+			// url#someBranch$newName
+			gitRepoName = it.substring(customNameIndex + 1)
+			branchName = it.substring(customBranchIndex + 1, customNameIndex)
+		} else if (customNameIndex == -1) {
+			// url#someBranch
+			gitRepoName = it.substring(it.lastIndexOf("/") + 1, customBranchIndex)
+			branchName = it.substring(customBranchIndex + 1)
+		}
+	}
+			git {
+				remote {
+					name('origin')
+					url(prodDeployrepo)
+					branch('dev/${PIPELINE_VERSION}')
+					credentials(gitUseSshKey ? gitSshCredentials : gitCredentials)
+				}
+				extensions {
+					wipeOutWorkspace()
+				}
+			}
 			git {
 				forcePush(true)
 				pushOnlyIfSuccess()
@@ -697,6 +745,7 @@ if(projectName.equalsIgnoreCase("prod-env-deploy-pipeline")) {
 					update()
 				}
 			}
+		}
 		}
 	}
 
