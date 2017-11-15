@@ -690,46 +690,46 @@ if(projectName.equalsIgnoreCase("prod-env-deploy-pipeline")) {
 				}
 			}
 			
-			String repos = binding.variables["REPOS"] ?:
+			String repos1 = binding.variables["REPOS"] ?:
 		["https://github.com/asokjp/claimant-service",
-		 "https://github.com/asokjp/config-server1","https://github.com/asokjp/hello-world"].join(",")
-List<String> parsedRepos = repos.split(",")
-parsedRepos.each {
-	String gitRepoName = it.split('/').last() - '.git'
-	String fullGitRepo
-	String branchName = "master"
-	int customNameIndex = it.indexOf('$')
-	int customBranchIndex = it.indexOf('#')
-	if (customNameIndex == -1 && customBranchIndex == -1) {
+		 "https://github.com/asokjp/config-server1","https://github.com/asokjp/hello-world","https://github.com/asokjp/prod-env-deploy"].join(",")
+List<String> parsedRepos1 = repos1.split(",")
+parsedRepos1.each {
+	String gitRepoName1 = it1.split('/').last() - '.git'
+	String fullGitRepo1
+	String branchName1 = "master"
+	int customNameIndex1 = it1.indexOf('$')
+	int customBranchIndex1 = it1.indexOf('#')
+	if (customNameIndex1 == -1 && customBranchIndex1 == -1) {
 		// url
-		fullGitRepo = it
-		branchName = "master"
-	} else if (customNameIndex > -1 && (customNameIndex < customBranchIndex || customBranchIndex == -1)) {
-		fullGitRepo = it.substring(0, customNameIndex)
-		if (customNameIndex < customBranchIndex) {
+		fullGitRepo1 = it1
+		branchName1 = "master"
+	} else if (customNameIndex1 > -1 && (customNameIndex1 < customBranchIndex1 || customBranchIndex1 == -1)) {
+		fullGitRepo1 = it1.substring(0, customNameIndex1)
+		if (customNameIndex1 < customBranchIndex1) {
 			// url$newName#someBranch
-			gitRepoName = it.substring(customNameIndex + 1, customBranchIndex)
-			branchName = it.substring(customBranchIndex + 1)
-		} else if (customBranchIndex == -1) {
+			gitRepoName1 = it1.substring(customNameIndex1 + 1, customBranchIndex1)
+			branchName1 = it1.substring(customBranchIndex1 + 1)
+		} else if (customBranchIndex1 == -1) {
 			// url$newName
-			gitRepoName = it.substring(customNameIndex + 1)
+			gitRepoName1 = it.substring(customNameIndex1 + 1)
 		}
-	} else if (customBranchIndex > -1) {
-		fullGitRepo = it.substring(0, customBranchIndex)
-		if (customBranchIndex < customNameIndex) {
+	} else if (customBranchIndex1 > -1) {
+		fullGitRepo1 = it.substring(0, customBranchIndex1)
+		if (customBranchIndex1 < customNameIndex1) {
 			// url#someBranch$newName
-			gitRepoName = it.substring(customNameIndex + 1)
-			branchName = it.substring(customBranchIndex + 1, customNameIndex)
-		} else if (customNameIndex == -1) {
+			gitRepoName1 = it1.substring(customNameIndex1 + 1)
+			branchName1 = it1.substring(customBranchIndex1 + 1, customNameIndex1)
+		} else if (customNameIndex1 == -1) {
 			// url#someBranch
-			gitRepoName = it.substring(it.lastIndexOf("/") + 1, customBranchIndex)
-			branchName = it.substring(customBranchIndex + 1)
+			gitRepoName1 = it1.substring(it1.lastIndexOf("/") + 1, customBranchIndex1)
+			branchName1 = it1.substring(customBranchIndex1 + 1)
 		}
 	}
 			git {
 				remote {
 					name('origin')
-					url(prodDeployrepo)
+					url(fullGitRepo)
 					branch('dev/${PIPELINE_VERSION}')
 					credentials(gitUseSshKey ? gitSshCredentials : gitCredentials)
 				}
