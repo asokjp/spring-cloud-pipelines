@@ -650,8 +650,8 @@ if(projectName.equalsIgnoreCase("prod-env-deploy-pipeline")) {
 			git {
 				remote {
 					name('origin')
-					url(prodDeployrepo)
-					branch('dev/${PIPELINE_VERSION}')
+					url(fullGitRepo)
+					branch(branchName)
 					credentials(gitUseSshKey ? gitSshCredentials : gitCredentials)
 				}
 				extensions {
@@ -689,56 +689,7 @@ if(projectName.equalsIgnoreCase("prod-env-deploy-pipeline")) {
 					currentBuild()
 				}
 			}
-			
-			String repos1 = binding.variables["REPOS"] ?:
-		["https://github.com/asokjp/claimant-service",
-		 "https://github.com/asokjp/config-server1","https://github.com/asokjp/hello-world","https://github.com/asokjp/prod-env-deploy"].join(",")
-List<String> parsedRepos1 = repos1.split(",")
-parsedRepos1.each {
-	String gitRepoName1 = it.split('/').last() - '.git'
-	String fullGitRepo1
-	String branchName1 = "master"
-	int customNameIndex1 = it.indexOf('$')
-	int customBranchIndex1 = it.indexOf('#')
-	if (customNameIndex1 == -1 && customBranchIndex1 == -1) {
-		// url
-		fullGitRepo1 = it
-		branchName1 = "master"
-	} else if (customNameIndex1 > -1 && (customNameIndex1 < customBranchIndex1 || customBranchIndex1 == -1)) {
-		fullGitRepo1 = it.substring(0, customNameIndex1)
-		if (customNameIndex1 < customBranchIndex1) {
-			// url$newName#someBranch
-			gitRepoName1 = it.substring(customNameIndex1 + 1, customBranchIndex1)
-			branchName1 = it.substring(customBranchIndex1 + 1)
-		} else if (customBranchIndex1 == -1) {
-			// url$newName
-			gitRepoName1 = it.substring(customNameIndex1 + 1)
-		}
-	} else if (customBranchIndex1 > -1) {
-		fullGitRepo1 = it.substring(0, customBranchIndex1)
-		if (customBranchIndex1 < customNameIndex1) {
-			// url#someBranch$newName
-			gitRepoName1 = it.substring(customNameIndex1 + 1)
-			branchName1 = it.substring(customBranchIndex1 + 1, customNameIndex1)
-		} else if (customNameIndex1 == -1) {
-			// url#someBranch
-			gitRepoName1 = it.substring(it.lastIndexOf("/") + 1, customBranchIndex1)
-			branchName1 = it.substring(customBranchIndex1 + 1)
-		}
-	}
-			scm {
-				git {
-				remote {
-					name('origin')
-					url(fullGitRepo)
-					branch('dev/${PIPELINE_VERSION}')
-					credentials(gitUseSshKey ? gitSshCredentials : gitCredentials)
-				}
-				extensions {
-					wipeOutWorkspace()
-				}
-			}
-			}
+
 			git {
 				forcePush(true)
 				pushOnlyIfSuccess()

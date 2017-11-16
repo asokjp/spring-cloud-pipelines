@@ -50,6 +50,24 @@ function logInToPaas() {
 	"${KUBECTL_BIN}" version
 }
 
+function downloadHelm() {
+#HELM_VERSION="${HELM_VERSION:-v2.7.0-linux-amd64}"
+#HELM_ARCHIVE="${HELM_ARCHIVE:-helm-${HELM_VERSION}-${OS_TYPE}.tar.gz}"
+#wget "https://kubernetes-helm.storage.googleapis.com/${HELM_ARCHIVE}"
+#tar xvf "${HELM_ARCHIVE}"
+#rm -vf -- "${HELM_ARCHIVE}"
+#mv linux-amd64/helm /usr/local/bin/helm
+	if ! [ -x "/usr/local/bin/helm" ]; then
+		echo "installing helm.."
+		curl https://raw.githubusercontent.com/kubernetes/helm/master/scripts/get > get_helm.sh
+		chmod 700 get_helm.sh
+		./get_helm.sh
+		helm init --client-only
+	fi
+}
+
+
+
 function downloadGCloud() {
  if [[ "${OSTYPE}" == linux* ]]; then
 			OS_TYPE="linux"
@@ -76,7 +94,7 @@ function testDeploy() {
 	appName=$(retrieveAppName)
 	# Log in to PaaS to start deployment
 	logInToPaas
-
+	setVersionForReleaseTrain "${appName}" "${PIPELINE_VERSION}"
 	deployServices
 
 	# deploy app
@@ -295,6 +313,22 @@ function system {
 		*) echo "Unsupported system" && exit 1
 	esac
 	echo "${machine}"
+}
+
+function setVersionForReleaseTrain() {
+	local projectName = "${1}"
+	echo "project name is ${1}"
+	version = "${2}"
+	echo "version is ${version}"
+	git clone https://github.com/asokjp/prod-env-deploy
+	#git add "${deploymentFile}"
+	git add *
+	git commit -m "adding new version"
+	git push orgin master
+	local variableName = "${1}-version"
+	echo "variableName is ${variableName}"
+	local deploymentFile="prod-env-deploy/releasetrain.yml"
+	substituteVariables "${variableName}" "${version}" "${deploymentFile}"
 }
 
 function substituteVariables() {
@@ -670,14 +704,22 @@ function stageDeploy() {
 
 function performGreenDeployment() {
 	# TODO: Consider making it less JVM specific
-	local appName
-	appName="$(retrieveAppName)"
+	#local appName
+	#appName="$(retrieveAppName)"
 	# Log in to PaaS to start deployment
 	logInToPaas
 
 	# deploy app
 	performGreenDeploymentOfTestedApplication "${appName}"
 }
+
+function performGreenDeploymentOfConfigServer() {
+	local appName="config-server"
+	helm install  --set configserver.image.name="${DOCKER_REGISTRY_ORGANIZATION}/${appName}/${PIPELINE_VERSION}" --name "London" --namespace  ./configserver
+	waitForAppToStart "${appName}"
+	
+}
+
 
 function performGreenDeploymentOfTestedApplication() {
 	local appName="${1}"
