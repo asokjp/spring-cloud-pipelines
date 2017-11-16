@@ -320,7 +320,7 @@ function setVersionForReleaseTrain() {
 	echo "project name is ${1}"
 	version="${2}"
 	echo "version is ${version}"
-	git clone asokjp@host:https://github.com/asokjp/prod-env-deploy
+	git clone https://asokjp:Lalithamma1@github.com/asokjp/prod-env-deploy.git
 	#git add "${deploymentFile}"
 	git add *
 	git commit -m "adding new version"
