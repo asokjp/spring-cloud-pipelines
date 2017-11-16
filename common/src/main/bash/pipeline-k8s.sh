@@ -324,13 +324,14 @@ function setVersionForReleaseTrain() {
 	git config --global user.name "asokjp"
 	git clone https://asokjp:Lalithamma1@github.com/asokjp/prod-env-deploy.git
 	#git add "${deploymentFile}"
+	cd prod-env-deploy
+	local deploymentFile="releasetrain.yml"
+	local variableName="${1}-version"
+	echo "variableName is ${variableName}"
+	substituteVariables "${variableName}" "${version}" "${deploymentFile}"
 	git add *
 	git commit -m "adding new version"
 	git push orgin master
-	local variableName="${1}-version"
-	echo "variableName is ${variableName}"
-	local deploymentFile="prod-env-deploy/releasetrain.yml"
-	substituteVariables "${variableName}" "${version}" "${deploymentFile}"
 }
 
 function substituteVariables() {
