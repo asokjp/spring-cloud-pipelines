@@ -325,13 +325,16 @@ function setVersionForReleaseTrain() {
 	git clone https://asokjp:Lalithamma1@github.com/asokjp/prod-env-deploy.git
 	#git add "${deploymentFile}"
 	cd prod-env-deploy
+	git init
 	local deploymentFile="releasetrain.yml"
 	local variableName="${1}-version"
 	echo "variableName is ${variableName}"
 	substituteVariables "${variableName}" "${version}" "${deploymentFile}"
 	git add *
 	git commit -m "adding new version"
-	git push orgin master
+	git remote add origin https://github.com/asokjp/prod-env-deploy.git
+	git push -u origin master
+	cd ..
 }
 
 function substituteVariables() {
