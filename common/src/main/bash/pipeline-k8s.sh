@@ -332,9 +332,10 @@ function setVersionForReleaseTrain() {
 	substituteVariables "${variableName}" "${version}" "${deploymentFile}"
 	git add *
 	git commit -m "adding new version"
-	git remote add origin https://github.com/asokjp/prod-env-deploy.git
+	#git remote add origin https://github.com/asokjp/prod-env-deploy.git
 	git push -u origin master
 	cd ..
+	rm -rf prod-env-deploy
 }
 
 function substituteVariables() {
