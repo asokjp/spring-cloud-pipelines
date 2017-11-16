@@ -316,16 +316,16 @@ function system {
 }
 
 function setVersionForReleaseTrain() {
-	local projectName = "${1}"
+	local projectName="${1}"
 	echo "project name is ${1}"
-	version = "${2}"
+	version="${2}"
 	echo "version is ${version}"
 	git clone https://github.com/asokjp/prod-env-deploy
 	#git add "${deploymentFile}"
 	git add *
 	git commit -m "adding new version"
 	git push orgin master
-	local variableName = "${1}-version"
+	local variableName="${1}-version"
 	echo "variableName is ${variableName}"
 	local deploymentFile="prod-env-deploy/releasetrain.yml"
 	substituteVariables "${variableName}" "${version}" "${deploymentFile}"
