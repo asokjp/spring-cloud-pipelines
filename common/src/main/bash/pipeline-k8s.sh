@@ -723,7 +723,7 @@ function performGreenDeployment() {
 
 function performGreenDeploymentOfConfigServer() {
 	local appName="config-server"
-	local version=cat releasetrain.yml | docker run -i --rm jlordiales/jyparser get ."${appName}"
+	local version=$(grep  'config-server:' releasetrain.yml | awk '{ print $2}'}
 	echo "version of config-server is ${version}"
 	downloadHelm
 	helm install  --set configserver.image.name="${DOCKER_REGISTRY_ORGANIZATION}/${appName}:${version}" --name "London" --namespace  "${PAAS_NAMESPACE}" ./configserver
