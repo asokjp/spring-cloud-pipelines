@@ -793,7 +793,7 @@ if(projectName.equalsIgnoreCase("prod-env-deploy-pipeline")) {
 		''')
 		}
 	}
-	}
+	
 }	
 
 //  ======= JOBS =======
