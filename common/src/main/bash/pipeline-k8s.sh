@@ -94,11 +94,11 @@ function testDeploy() {
 	appName=$(retrieveAppName)
 	# Log in to PaaS to start deployment
 	logInToPaas
-	setVersionForReleaseTrain "${appName}" "${PIPELINE_VERSION}"
 	deployServices
-
 	# deploy app
 	deployAndRestartAppWithNameForSmokeTests "${appName}" "${PIPELINE_VERSION}"
+	# update the version to release tree
+	setVersionForReleaseTrain "${appName}" "${PIPELINE_VERSION}"
 }
 
 function testRollbackDeploy() {
@@ -717,12 +717,15 @@ function performGreenDeployment() {
 	logInToPaas
 
 	# deploy app
-	performGreenDeploymentOfTestedApplication "${appName}"
+	performGreenDeploymentOfConfigServer
+	#performGreenDeploymentOfTestedApplication "${appName}"
 }
 
 function performGreenDeploymentOfConfigServer() {
 	local appName="config-server"
-	helm install  --set configserver.image.name="${DOCKER_REGISTRY_ORGANIZATION}/${appName}/${PIPELINE_VERSION}" --name "London" --namespace  ./configserver
+	local version=$(cat my_app.json | jq '.${appName}')
+	echo "version of config-server is ${version}"
+	helm install  --set configserver.image.name="${DOCKER_REGISTRY_ORGANIZATION}/${appName}:${version}" --name "London" --namespace  "${PAAS_NAMESPACE}" ./configserver
 	waitForAppToStart "${appName}"
 	
 }
