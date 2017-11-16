@@ -320,6 +320,8 @@ function setVersionForReleaseTrain() {
 	echo "project name is ${1}"
 	version="${2}"
 	echo "version is ${version}"
+	git config --global user.email "asok_jp@yahoo.com"
+	git config --global user.name "asokjp"
 	git clone https://asokjp:Lalithamma1@github.com/asokjp/prod-env-deploy.git
 	#git add "${deploymentFile}"
 	git add *
