@@ -331,7 +331,7 @@ function setVersionForReleaseTrain() {
 	local currentversion=$(grep  'claimant-service:' releasetrain.yml | awk '{ print $2}')
 	echo "variableName is ${currentversion}"
 	#sed 's/${currentversion}/${version}/' "${deploymentFile}"
-	sed -i "s/{{${currentversion}}}/${version}/" "${deploymentFile}"
+	sed -i "s/${currentversion}/${version}/" "releasetrain.yml"
 	#substituteVariables "${currentversion}" "${version}" "${deploymentFile}"
 	git add *
 	git commit -m "adding new version"
@@ -347,6 +347,7 @@ function substituteVariables() {
 	local fileName="${3}"
 	local escapedSubstitution
 	escapedSubstitution=$(escapeValueForSed "${substitution}")
+	echo "escapedSubstitution is ${escapedSubstitution}"
 	#echo "Changing [${variableName}] -> [${escapedSubstitution}] for file [${fileName}]"
 	if [[ "${SYSTEM}" == "darwin" ]]; then
 		sed -i "" "s/{{${variableName}}}/${escapedSubstitution}/" "${fileName}"
