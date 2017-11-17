@@ -330,7 +330,7 @@ function setVersionForReleaseTrain() {
 	#local variableName="${1}-version"
 	local currentversion=$(grep  'config-server:' releasetrain.yml | awk '{ print $2}')
 	echo "variableName is ${currentversion}"
-	sed 's/${currentversion}/${version' "${deploymentFile}"
+	sed 's/${currentversion}/${version}/' "${deploymentFile}"
 	#substituteVariables "${currentversion}" "${version}" "${deploymentFile}"
 	git add *
 	git commit -m "adding new version"
