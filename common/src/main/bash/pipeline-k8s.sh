@@ -726,7 +726,7 @@ function performGreenDeploymentOfConfigServer() {
 	local version=$(grep  'config-server:' releasetrain.yml | awk '{ print $2}')
 	echo "version of config-server is ${version}"
 	downloadHelm
-	helm install  --set configserver.image.name="${DOCKER_REGISTRY_ORGANIZATION}/${appName}:${version}" --set configserver.image.version="${version}" --name london --namespace  "${PAAS_NAMESPACE}" ./configserver
+	helm install  --set configserver.image.name="${DOCKER_REGISTRY_ORGANIZATION}/${appName}:${version}" --set configserver.image.version="${version}"  --namespace  "${PAAS_NAMESPACE}" ./configserver
 	waitForAppToStart "${appName}"
 	
 }
