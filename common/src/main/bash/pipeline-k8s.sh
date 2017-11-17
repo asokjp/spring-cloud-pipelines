@@ -328,7 +328,7 @@ function setVersionForReleaseTrain() {
 	git init
 	local deploymentFile="releasetrain.yml"
 	#local variableName="${1}-version"
-	local currentversion=$(grep  'claimant-service:' releasetrain.yml | awk '{ print $2}')
+	local currentversion=$(grep  'config-server:' releasetrain.yml | awk '{ print $2}')
 	echo "variableName is ${currentversion}"
 	#sed 's/${currentversion}/${version}/' "${deploymentFile}"
 	sed -i "s/${currentversion}/${version}/" "releasetrain.yml"
