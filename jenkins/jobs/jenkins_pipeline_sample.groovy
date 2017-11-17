@@ -624,19 +624,14 @@ if(!projectName.equalsIgnoreCase("prod-env-deploy-pipeline")) {
 }
 if(projectName.equalsIgnoreCase("prod-env-deploy-pipeline")) {
 	dsl.job("prod-env-deploy") {
-		deliveryPipelineConfiguration('Prod', 'Deploy to prod')
+		deliveryPipelineConfiguration('Prod', 'Prod deploy')
+		triggers {
+			cron(cronValue)
+			githubPush()
+		}
 		wrappers {
-			deliveryPipelineVersion('${ENV,var="PIPELINE_VERSION"}', true)
-			maskPasswords()
+			deliveryPipelineVersion(pipelineVersion, true)
 			environmentVariables(defaults.defaultEnvVars)
-			credentialsBinding {
-				// remove::start[CF]
-				if (cfProdCredentialId) usernamePassword('PAAS_PROD_USERNAME', 'PAAS_PROD_PASSWORD', cfProdCredentialId)
-				// remove::end[CF]
-				// remove::start[K8S]
-				if (k8sProdTokenCredentialId) string("TOKEN", k8sProdTokenCredentialId)
-				// remove::end[K8S]
-			}
 			timestamps()
 			colorizeOutput()
 			maskPasswords()
@@ -644,6 +639,10 @@ if(projectName.equalsIgnoreCase("prod-env-deploy-pipeline")) {
 				noActivity(300)
 				failBuild()
 				writeDescription('Build failed due to timeout after {0} minutes of inactivity')
+			}
+			credentialsBinding {
+				if (repoWithBinariesCredentials) usernamePassword('M2_SETTINGS_REPO_USERNAME', 'M2_SETTINGS_REPO_PASSWORD', repoWithBinariesCredentials)
+				if (dockerCredentials) usernamePassword('DOCKER_USERNAME', 'DOCKER_PASSWORD', dockerCredentials)
 			}
 		}
 		scm {
@@ -691,7 +690,7 @@ if(projectName.equalsIgnoreCase("prod-env-deploy-pipeline")) {
 			}
 
 			git {
-				forcePush(true)
+			//	forcePush(true)
 				pushOnlyIfSuccess()
 				tag('origin', "prod/\${PIPELINE_VERSION}") {
 					create()
