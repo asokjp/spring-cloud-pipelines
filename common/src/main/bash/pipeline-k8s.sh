@@ -327,9 +327,11 @@ function setVersionForReleaseTrain() {
 	cd prod-env-deploy
 	git init
 	local deploymentFile="releasetrain.yml"
-	local variableName="${1}-version"
-	echo "variableName is ${variableName}"
-	substituteVariables "${variableName}" "${version}" "${deploymentFile}"
+	#local variableName="${1}-version"
+	local currentversion=$(grep  'config-server:' releasetrain.yml | awk '{ print $2}')
+	echo "variableName is ${currentversion}"
+	sed 's/${currentversion}/${version' "${deploymentFile}"
+	#substituteVariables "${currentversion}" "${version}" "${deploymentFile}"
 	git add *
 	git commit -m "adding new version"
 	#git remote add origin https://github.com/asokjp/prod-env-deploy.git
