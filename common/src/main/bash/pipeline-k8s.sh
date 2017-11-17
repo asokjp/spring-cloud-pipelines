@@ -727,7 +727,7 @@ function performGreenDeploymentOfConfigServer() {
 	echo "version of config-server is ${version}"
 	downloadHelm
 	helm install  --set configserver.image.name="${DOCKER_REGISTRY_ORGANIZATION}/${appName}:${version}" --set configserver.version="${version}"  --namespace  "${PAAS_NAMESPACE}" ./configserver
-	waitForAppToStart "${appName}"
+	#waitForAppToStart "${appName}"
 	
 }
 
