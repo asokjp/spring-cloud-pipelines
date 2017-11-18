@@ -50,6 +50,24 @@ function logInToPaas() {
 	"${KUBECTL_BIN}" version
 }
 
+function downloadHelm() {
+#HELM_VERSION="${HELM_VERSION:-v2.7.0-linux-amd64}"
+#HELM_ARCHIVE="${HELM_ARCHIVE:-helm-${HELM_VERSION}-${OS_TYPE}.tar.gz}"
+#wget "https://kubernetes-helm.storage.googleapis.com/${HELM_ARCHIVE}"
+#tar xvf "${HELM_ARCHIVE}"
+#rm -vf -- "${HELM_ARCHIVE}"
+#mv linux-amd64/helm /usr/local/bin/helm
+	if ! [ -x "/usr/local/bin/helm" ]; then
+		echo "installing helm.."
+		curl https://raw.githubusercontent.com/kubernetes/helm/master/scripts/get > get_helm.sh
+		chmod 700 get_helm.sh
+		./get_helm.sh
+		helm init --client-only
+	fi
+}
+
+
+
 function downloadGCloud() {
  if [[ "${OSTYPE}" == linux* ]]; then
 			OS_TYPE="linux"
@@ -76,11 +94,11 @@ function testDeploy() {
 	appName=$(retrieveAppName)
 	# Log in to PaaS to start deployment
 	logInToPaas
-
 	deployServices
-
 	# deploy app
 	deployAndRestartAppWithNameForSmokeTests "${appName}" "${PIPELINE_VERSION}"
+	# update the version to release tree
+	setVersionForReleaseTrain "${appName}" "${PIPELINE_VERSION}"
 }
 
 function testRollbackDeploy() {
@@ -297,12 +315,39 @@ function system {
 	echo "${machine}"
 }
 
+function setVersionForReleaseTrain() {
+	local projectName="${1}"
+	echo "project name is ${1}"
+	version="${2}"
+	echo "version is ${version}"
+	git config --global user.email "asok_jp@yahoo.com"
+	git config --global user.name "asokjp"
+	git clone https://asokjp:Lalithamma1@github.com/asokjp/prod-env-deploy.git
+	#git add "${deploymentFile}"
+	cd prod-env-deploy
+	git init
+	local deploymentFile="releasetrain.yml"
+	#local variableName="${1}-version"
+	local currentversion=$(grep  'config-server:' releasetrain.yml | awk '{ print $2}')
+	echo "variableName is ${currentversion}"
+	#sed 's/${currentversion}/${version}/' "${deploymentFile}"
+	sed -i "s/${currentversion}/${version}/" "releasetrain.yml"
+	#substituteVariables "${currentversion}" "${version}" "${deploymentFile}"
+	git add *
+	git commit -m "adding new version"
+	#git remote add origin https://github.com/asokjp/prod-env-deploy.git
+	git push -u origin master
+	cd ..
+	rm -rf prod-env-deploy
+}
+
 function substituteVariables() {
 	local variableName="${1}"
 	local substitution="${2}"
 	local fileName="${3}"
 	local escapedSubstitution
 	escapedSubstitution=$(escapeValueForSed "${substitution}")
+	echo "escapedSubstitution is ${escapedSubstitution}"
 	#echo "Changing [${variableName}] -> [${escapedSubstitution}] for file [${fileName}]"
 	if [[ "${SYSTEM}" == "darwin" ]]; then
 		sed -i "" "s/{{${variableName}}}/${escapedSubstitution}/" "${fileName}"
@@ -670,14 +715,26 @@ function stageDeploy() {
 
 function performGreenDeployment() {
 	# TODO: Consider making it less JVM specific
-	local appName
-	appName="$(retrieveAppName)"
+	#local appName
+	#appName="$(retrieveAppName)"
 	# Log in to PaaS to start deployment
 	logInToPaas
 
 	# deploy app
-	performGreenDeploymentOfTestedApplication "${appName}"
+	performGreenDeploymentOfConfigServer
+	#performGreenDeploymentOfTestedApplication "${appName}"
 }
+
+function performGreenDeploymentOfConfigServer() {
+	local appName="config-server"
+	local version=$(grep  'config-server:' releasetrain.yml | awk '{ print $2}')
+	echo "version of config-server is ${version}"
+	downloadHelm
+	helm install  --set configserver.image.name="${DOCKER_REGISTRY_ORGANIZATION}/${appName}:${version}" --set configserver.version="${version}"  --namespace  "${PAAS_NAMESPACE}" ./configserver
+	#waitForAppToStart "${appName}"
+	
+}
+
 
 function performGreenDeploymentOfTestedApplication() {
 	local appName="${1}"
@@ -755,19 +812,15 @@ function rollbackToPreviousVersion() {
 function deleteBlueInstance() {
 	local appName
 	appName="$(retrieveAppName)"
-	echo "appName is - ${appName}"
 	# Log in to CF to start deployment
 	logInToPaas
 	# find the oldest version and remove it
 	local changedAppName
 	changedAppName="$(dnsEscapedAppNameWithVersionSuffix "${appName}-${PIPELINE_VERSION}")"
-	echo "changedAppName is - ${changedAppName}"
 	local otherDeployedInstances
 	otherDeployedInstances="$(otherDeployedInstances "${appName}" "${changedAppName}" )"
-	echo "otherDeployedInstancesis - ${otherDeployedInstances}"
 	local oldestDeployment
 	oldestDeployment="$(oldestDeployment "${otherDeployedInstances}")"
-	echo "oldestDeployment is - ${oldestDeployment}"
 	if [[ "${oldestDeployment}" != "" ]]; then
 		echo "Deleting deployment with name [${oldestDeployment}]"
 		"${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" delete deployment "${oldestDeployment}"
