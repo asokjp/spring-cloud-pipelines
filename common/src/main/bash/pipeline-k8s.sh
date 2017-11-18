@@ -740,18 +740,26 @@ function performGreenDeploymentOfConfigServer() {
 	local version=$(grep  'config-server:' releasetrain.yml | awk '{ print $2}')
 	echo "version of config-server is ${version}"
 	downloadHelm
-	modifyChartVersion "${PIPELINE_VERSION}" "config-server/Chart.yaml"
+	local releaseVersion="$(getReleaseVersionFromPipelineVersion "${PIPELINE_VERSION}" )"
+	echo "releaseVersion is - ${releaseVersion}"
+	modifyChartVersion "${releaseVersion}" "config-server/Chart.yaml"
 	helm install  --set configserver.image.name="${DOCKER_REGISTRY_ORGANIZATION}/${appName}:${version}" --set configserver.version="${version}"  --namespace  "${PAAS_NAMESPACE}" ./config-server
 	#waitForAppToStart "${appName}"
 	
 }
 
 function modifyChartVersion() {
-	local pipelineVersion="${1}"
+	local releaseVersion="${1}"
 	local destinationFile="${2}"
 	local currentchartversion=$(grep  'version:' ${destinationFile} | awk '{ print $2}')
 	echo "currentchartversion is ${currentchartversion}"
-	sed -i "s/${currentchartversion}/${pipelineVersion}/" "${destinationFile}"
+	sed -i "s/${currentchartversion}/${releaseVersion}/" "${destinationFile}"
+}
+
+function getReleaseVersionFromPipelineVersion() {
+	local pipelineVersion="${1}"
+	arrIN=(${pipelineVersion//-/ })
+	echo "${arrIN[1]}"
 }
 
 
