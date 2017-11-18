@@ -727,12 +727,53 @@ function performGreenDeployment() {
 }
 
 function performGreenDeploymentOfOtherServices {
+	local helmoptions="--set "
+	git config --global user.email "asok_jp@yahoo.com"
+	git config --global user.name "asokjp"
 	local repos="${REPOS}"
 	echo "repos are - ${repos}"
 	IFS=',' read -ra ADDR <<< "$repos"
 	for i in "${ADDR[@]}"; do
 	 echo "repo is - $i"
+	 local projectName=echo ("$i" | rev | cut -d'/' -f 1 | rev)
+	 echo "projectName is - ${projectName}"
+	 if [[ ( "${projectName}" != "config-server1" ) && ( "${projectName}" != "prod-env-deploy" ) ]]; then
+		echo "true"
+		local version=$(grep  "${projectName}:" releasetrain.yml | awk '{ print $2}')
+		echo "version of ${projectName} is ${version}"
+		helmoptions="${helmoptions} ${projectName}.image.name=${DOCKER_REGISTRY_ORGANIZATION}/${projectName}:${version} --set ${projectName}.version=${version}"
+	else
+		echo "false"
+		
+	fi
 	done
+	for j in "${ADDR[@]}"; do
+	 echo "repo is - $j"
+	 local projectName=echo ("$j" | rev | cut -d'/' -f 1 | rev)
+	 echo "projectName is - ${projectName}"
+	 if [[ ( "${projectName}" != "config-server1" ) && ( "${projectName}" != "prod-env-deploy" ) ]]; then
+		echo "true"
+		local version=$(grep  "${projectName}:" releasetrain.yml | awk '{ print $2}')
+		echo "version of ${projectName} is ${version}"
+		git config --global user.email "asok_jp@yahoo.com"
+		git config --global user.name "asokjp"
+		git clone https://asokjp:Lalithamma1@github.com/asokjp/"${projectName}"  --branch dev/"${version}"
+		cd "${projectName}"
+		git tag prod/"${version}"
+		git push origin prod/"${version}" --force
+		cd ..
+		rm -rf "${projectName}"
+	else
+		echo "false"
+		
+	fi
+	done
+	downloadHelm
+	local releaseVersion="$(getReleaseVersionFromPipelineVersion "${PIPELINE_VERSION}" )"
+	echo "releaseVersion is - ${releaseVersion}"
+	modifyChartVersion "${releaseVersion}" "otherservices/Chart.yaml"
+	echo "helmoptions are - ${helmoptions}"
+	helm install "${helmoptions}"  --namespace  "${PAAS_NAMESPACE}" ./otherservices
 }
 
 function performGreenDeploymentOfConfigServer() {
@@ -745,7 +786,14 @@ function performGreenDeploymentOfConfigServer() {
 	modifyChartVersion "${releaseVersion}" "config-server/Chart.yaml"
 	helm install  --set configserver.image.name="${DOCKER_REGISTRY_ORGANIZATION}/${appName}:${version}" --set configserver.version="${version}"  --namespace  "${PAAS_NAMESPACE}" ./config-server
 	#waitForAppToStart "${appName}"
-	
+	git config --global user.email "asok_jp@yahoo.com"
+	git config --global user.name "asokjp"
+	git clone https://asokjp:Lalithamma1@github.com/asokjp/config-server1  --branch dev/"${version}"
+	cd config-server1
+	git tag prod/"${version}"
+	git push origin prod/"${version}" --force
+	cd ..
+	rm -rf config-server1
 }
 
 function modifyChartVersion() {
