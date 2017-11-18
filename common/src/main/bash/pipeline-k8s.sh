@@ -711,15 +711,19 @@ function rollbackToPreviousVersion() {
 function deleteBlueInstance() {
 	local appName
 	appName="$(retrieveAppName)"
+	echo "appName is ${appName}"
 	# Log in to CF to start deployment
 	logInToPaas
 	# find the oldest version and remove it
 	local changedAppName
 	changedAppName="$(dnsEscapedAppNameWithVersionSuffix "${appName}-${PIPELINE_VERSION}")"
+	echo "changedAppName is - ${changedAppName}"
 	local otherDeployedInstances
 	otherDeployedInstances="$(otherDeployedInstances "${appName}" "${changedAppName}" )"
+	echo "otherDeployedInstances is - ${otherDeployedInstances}"
 	local oldestDeployment
 	oldestDeployment="$(oldestDeployment "${otherDeployedInstances}")"
+	echo "oldestDeployment is ${oldestDeployment}"
 	if [[ "${oldestDeployment}" != "" ]]; then
 		echo "Deleting deployment with name [${oldestDeployment}]"
 		"${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" delete deployment "${oldestDeployment}" --kubeconfig="${KUBE_CONFIG_PATH}"
@@ -731,6 +735,7 @@ function deleteBlueInstance() {
 function otherDeployedInstances() {
 	local appName="${1}"
 	local changedAppName="${2}"
+	echo "KUBE_CONFIG_PATH is ${KUBE_CONFIG_PATH}"
 	"${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" get deployments -lname="${appName}" --no-headers --kubeconfig="${KUBE_CONFIG_PATH}" | awk '{print $1}' | grep -v "${changedAppName}" || echo ""
 }
 

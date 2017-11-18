@@ -33,10 +33,10 @@ class JobScriptsSpec extends Specification {
 		and:
 		if (file.name.endsWith('jenkins_pipeline_sample.groovy')) {
 			List<String> jobNames = scripts.jobs.collect { it.jobName }
-			assert jobNames.find { it == "claimant-service-pipeline-build" }
-			assert jobNames.find { it == "config-server1-pipeline-build" }
+			assert jobNames.find { it == "github-analytics-pipeline-build" }
+			assert jobNames.find { it == "github-webhook-pipeline-build" }
 			assert jobNames.find { it.contains("stage") }
-		//	assert jobNames.find { it.contains("prod-env-deploy") }
+			assert jobNames.find { it.contains("prod-env-deploy") }
 		}
 
 		where:
@@ -54,8 +54,8 @@ class JobScriptsSpec extends Specification {
 		jm.availableFiles['foo/test_rollback_smoke.sh'] = JobScriptsSpec.getResource('/test_rollback_smoke.sh').text
 		jm.availableFiles['foo/stage_deploy.sh'] = JobScriptsSpec.getResource('/stage_deploy.sh').text
 		jm.availableFiles['foo/stage_e2e.sh'] = JobScriptsSpec.getResource('/stage_e2e.sh').text
-		//jm.availableFiles['foo/prod_deploy.sh'] = JobScriptsSpec.getResource('/prod_deploy.sh').text
-		//jm.availableFiles['foo/prod_complete.sh'] = JobScriptsSpec.getResource('/prod_complete.sh').text
+		jm.availableFiles['foo/prod_deploy.sh'] = JobScriptsSpec.getResource('/prod_deploy.sh').text
+		jm.availableFiles['foo/prod_complete.sh'] = JobScriptsSpec.getResource('/prod_complete.sh').text
 	}
 
 	def 'should compile seed job'() {
@@ -99,7 +99,7 @@ class JobScriptsSpec extends Specification {
 				return it
 			}
 	}
-/**
+
 	def 'should parse REPOS with no special entries for ssh based authentication'() {
 		given:
 			MemoryJobManagement jm = new MemoryJobManagement()
@@ -119,13 +119,13 @@ class JobScriptsSpec extends Specification {
 			noExceptionThrown()
 
 		and:
-			jm.savedConfigs.find { it.key == "config-server1-pipeline-build" }.with {
-				assert it.value.contains("<url>git@github.com:asokjp/spring-cloud-pipelines.git")
+			jm.savedConfigs.find { it.key == "github-analytics-kubernetes-pipeline-build" }.with {
+				assert it.value.contains("<url>git@github.com:marcingrzejszczak/github-analytics-kubernetes.git")
 				assert it.value.contains("<name>master</name>")
 				return it
 			}
 	}
-*/
+
 	def 'should parse REPOS with custom project name only'() {
 		given:
 			MemoryJobManagement jm = new MemoryJobManagement()
@@ -250,8 +250,8 @@ class JobScriptsSpec extends Specification {
 
 		and:
 		scripts.jobs.every { !it.jobName.contains("stage") }
-		jm.savedConfigs.find { it.key == "config-server1-pipeline-test-env-rollback-test" }.with {
-			//assert it.value.contains("<downstreamProjectNames>github-webhook-pipeline-prod-env-deploy</downstreamProjectNames>")
+		jm.savedConfigs.find { it.key == "github-webhook-pipeline-test-env-rollback-test" }.with {
+			assert it.value.contains("<downstreamProjectNames>github-webhook-pipeline-prod-env-deploy</downstreamProjectNames>")
 			return it
 		}
 	}
@@ -273,9 +273,9 @@ class JobScriptsSpec extends Specification {
 		noExceptionThrown()
 
 		and:
-		jm.savedConfigs.find { it.key == "config-server1-pipeline-build" }.with {
+		jm.savedConfigs.find { it.key == "github-webhook-pipeline-build" }.with {
 			assert it.value.contains("hudson.plugins.parameterizedtrigger.BuildTrigger")
-			assert it.value.contains("<projects>config-server1-pipeline-build-api-check</projects>")
+			assert it.value.contains("<projects>github-webhook-pipeline-build-api-check</projects>")
 			assert !it.value.contains("au.com.centrumsystems.hudson.plugin.buildpipeline.trigger.BuildPipelineTrigger")
 			return it
 		}
@@ -299,14 +299,14 @@ class JobScriptsSpec extends Specification {
 		noExceptionThrown()
 
 		and:
-		jm.savedConfigs.find { it.key == "config-server1-pipeline-build" }.with {
+		jm.savedConfigs.find { it.key == "github-webhook-pipeline-build" }.with {
 			assert it.value.contains("hudson.plugins.parameterizedtrigger.BuildTrigger")
-			assert it.value.contains("<projects>config-server1-pipeline-test-env-deploy</projects>")
-			assert !it.value.contains("<projects>config-server1-pipeline-build-api-check</projects>")
+			assert it.value.contains("<projects>github-webhook-pipeline-test-env-deploy</projects>")
+			assert !it.value.contains("<projects>github-webhook-pipeline-build-api-check</projects>")
 			assert !it.value.contains("au.com.centrumsystems.hudson.plugin.buildpipeline.trigger.BuildPipelineTrigger")
 			return it
 		}
-		!scripts.jobs.find { it.jobName == "config-server1-pipeline-build-api-check" }
+		!scripts.jobs.find { it.jobName == "github-webhook-pipeline-build-api-check" }
 	}
 
 	def 'should automatically deploy to stage if that option is checked'() {
@@ -327,9 +327,9 @@ class JobScriptsSpec extends Specification {
 		noExceptionThrown()
 
 		and:
-		jm.savedConfigs.find { it.key == "config-server1-pipeline-test-env-rollback-test" }.with {
+		jm.savedConfigs.find { it.key == "github-webhook-pipeline-test-env-rollback-test" }.with {
 			assert it.value.contains("hudson.plugins.parameterizedtrigger.BuildTrigger")
-			assert it.value.contains("<projects>config-server1-pipeline-stage-env-deploy</projects>")
+			assert it.value.contains("<projects>github-webhook-pipeline-stage-env-deploy</projects>")
 			assert !it.value.contains("au.com.centrumsystems.hudson.plugin.buildpipeline.trigger.BuildPipelineTrigger")
 			return it
 		}
@@ -352,15 +352,15 @@ class JobScriptsSpec extends Specification {
 		noExceptionThrown()
 
 		and:
-		jm.savedConfigs.find { it.key == "config-server1-pipeline-test-env-rollback-test" }.with {
+		jm.savedConfigs.find { it.key == "github-webhook-pipeline-test-env-rollback-test" }.with {
 			assert !it.value.contains("hudson.plugins.parameterizedtrigger.BuildTrigger")
-			assert !it.value.contains("<projects>config-server1-pipeline-stage-env-deploy</projects>")
+			assert !it.value.contains("<projects>github-webhook-pipeline-stage-env-deploy</projects>")
 			assert it.value.contains("au.com.centrumsystems.hudson.plugin.buildpipeline.trigger.BuildPipelineTrigger")
-			assert it.value.contains("<downstreamProjectNames>config-server1-pipeline-stage-env-deploy</downstreamProjectNames>")
+			assert it.value.contains("<downstreamProjectNames>github-webhook-pipeline-stage-env-deploy</downstreamProjectNames>")
 			return it
 		}
 	}
-/**
+
 	def 'should automatically deploy to prod if that option is checked'() {
 		given:
 		MemoryJobManagement jm = new MemoryJobManagement()
@@ -438,7 +438,7 @@ class JobScriptsSpec extends Specification {
 			return it
 		}
 	}
-*/
+
 	static List<File> getJobFiles() {
 		List<File> files = []
 		new File('jobs').eachFileRecurse(FileType.FILES) {
