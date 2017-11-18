@@ -722,7 +722,17 @@ function performGreenDeployment() {
 
 	# deploy app
 	performGreenDeploymentOfConfigServer
+	performGreenDeploymentOfOtherServices
 	#performGreenDeploymentOfTestedApplication "${appName}"
+}
+
+function performGreenDeploymentOfOtherServices {
+	local repos="${REPOS}"
+	echo "repos are - ${repos}"
+	IFS=',' read -ra ADDR <<< "$repos"
+	for i in "${ADDR[@]}"; do
+	 echo "repo is - $i"
+	done
 }
 
 function performGreenDeploymentOfConfigServer() {
@@ -730,9 +740,18 @@ function performGreenDeploymentOfConfigServer() {
 	local version=$(grep  'config-server:' releasetrain.yml | awk '{ print $2}')
 	echo "version of config-server is ${version}"
 	downloadHelm
-	helm install  --set configserver.image.name="${DOCKER_REGISTRY_ORGANIZATION}/${appName}:${version}" --set configserver.version="${version}"  --namespace  "${PAAS_NAMESPACE}" ./configserver
+	modifyChartVersion "${PIPELINE_VERSION}" "config-server/Chart.yaml"
+	helm install  --set configserver.image.name="${DOCKER_REGISTRY_ORGANIZATION}/${appName}:${version}" --set configserver.version="${version}"  --namespace  "${PAAS_NAMESPACE}" ./config-server
 	#waitForAppToStart "${appName}"
 	
+}
+
+function modifyChartVersion() {
+	local pipelineVersion="${1}"
+	local destinationFile="${2}"
+	local currentchartversion=$(grep  'version:' ${destinationFile} | awk '{ print $2}')
+	echo "currentchartversion is ${currentchartversion}"
+	sed -i "s/${currentchartversion}/${pipelineVersion}/" "${destinationFile}"
 }
 
 
