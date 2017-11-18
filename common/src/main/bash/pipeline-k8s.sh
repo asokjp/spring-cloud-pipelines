@@ -3,12 +3,16 @@
 set -e
 
 function logInToPaas() {
-	local ca="PAAS_${ENVIRONMENT}_CA"
+	local ca="PAAS_${ENVIRONMENT}_CA_PATH"
 	local k8sCa="${!ca}"
-	local clientCert="PAAS_${ENVIRONMENT}_CLIENT_CERT"
+	local caData="PAAS_${ENVIRONMENT}_CA"
+	local k8sCaData="${!caData}"
+	local clientCert="PAAS_${ENVIRONMENT}_CLIENT_CERT_PATH"
 	local k8sClientCert="${!clientCert}"
-	local clientKey="PAAS_${ENVIRONMENT}_CLIENT_KEY"
+	local clientKey="PAAS_${ENVIRONMENT}_CLIENT_KEY_PATH"
 	local k8sClientKey="${!clientKey}"
+	local tokenData="PAAS_${ENVIRONMENT}_CLIENT_TOKEN"
+	local k8sToken="${!tokenData}"
 	local tokenPath="PAAS_${ENVIRONMENT}_CLIENT_TOKEN_PATH"
 	local k8sTokenPath="${!tokenPath}"
 	local clusterName="PAAS_${ENVIRONMENT}_CLUSTER_NAME"
@@ -19,74 +23,44 @@ function logInToPaas() {
 	local k8sSystemName="${!systemName}"
 	local api="PAAS_${ENVIRONMENT}_API_URL"
 	local apiUrl="${!api:-192.168.99.100:8443}"
-	echo "Downloading CLI"
-	curl -LO "https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/darwin/amd64/kubectl" --fail
-	chmod +x "${KUBECTL_BIN}"
-	echo "Removing current Kubernetes configuration"
-	#rm -rf "${KUBE_CONFIG_PATH}" || echo "Failed to remove Kube config. Continuing with the script"
-	GCLOUD_PARENT_PATH="${GCLOUD_PARENT_PATH:-${HOME}/gcloud}"
-		GCLOUD_PATH="${GCLOUD_PATH:-${GCLOUD_PARENT_PATH}/google-cloud-sdk}"
-		if ! [ -x "${GCLOUD_PATH}" ]; then
-			echo "installing gcloud.."
-			downloadGCloud
-		fi
-	echo "Logging in to Kubernetes API [${apiUrl}], with cluster name [${k8sClusterName}] and user [${k8sClusterUser}]"
-	#"${KUBECTL_BIN}" config set-cluster "${k8sClusterName}" --server="https://${apiUrl}" --certificate-authority="${k8sCa}" --embed-certs=true
-	# TOKEN will get injected as a credential if present
-	#if [[ "${TOKEN}" != "" ]]; then
-	#	"${KUBECTL_BIN}" config set-credentials "${k8sClusterUser}" --token="${TOKEN}"
-	#elif [[ "${k8sTokenPath}" != "" ]]; then
-	#	local tokenContent
-	#	tokenContent="$(cat "${k8sTokenPath}")"
-	#	"${KUBECTL_BIN}" config set-credentials "${k8sClusterUser}" --token="${tokenContent}" --kubeconfig="${KUBE_CONFIG_PATH}"
-	#else
-	#	"${KUBECTL_BIN}" config set-credentials "${k8sClusterUser}" --certificate-authority="${k8sCa}" --client-key="${k8sClientKey}" --client-certificate="${k8sClientCert}"  --kubeconfig="${KUBE_CONFIG_PATH}"
-	#fi
-	#"${KUBECTL_BIN}" config set-context "${k8sSystemName}" --cluster="${k8sClusterName}" --user="${k8sClusterUser}"  --kubeconfig="${KUBE_CONFIG_PATH}"
-	#"${KUBECTL_BIN}" config use-context "${k8sSystemName}" --kubeconfig="${KUBE_CONFIG_PATH}"
-	#./google-cloud-sdk/bin/gcloud init
-	#gcloud container clusters get-credentials test --zone us-central1-c --project third-apex-181907
-	echo "CLI version"
-	"${KUBECTL_BIN}" version
-}
-
-function downloadHelm() {
-#HELM_VERSION="${HELM_VERSION:-v2.7.0-linux-amd64}"
-#HELM_ARCHIVE="${HELM_ARCHIVE:-helm-${HELM_VERSION}-${OS_TYPE}.tar.gz}"
-#wget "https://kubernetes-helm.storage.googleapis.com/${HELM_ARCHIVE}"
-#tar xvf "${HELM_ARCHIVE}"
-#rm -vf -- "${HELM_ARCHIVE}"
-#mv linux-amd64/helm /usr/local/bin/helm
-	if ! [ -x "/usr/local/bin/helm" ]; then
-		echo "installing helm.."
-		curl https://raw.githubusercontent.com/kubernetes/helm/master/scripts/get > get_helm.sh
-		chmod 700 get_helm.sh
-		./get_helm.sh
-		helm init --client-only
+	local kubeUrl="https://${apiUrl}"
+	echo "Path to kubectl [${KUBECTL_BIN}]"
+	if [[ "${TEST_MODE}" == "false" && "${KUBECTL_BIN}" != "/"* ]]; then
+		echo "Downloading CLI"
+		curl -LO "https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/${SYSTEM}/amd64/kubectl" --fail
+		KUBECTL_BIN="$(pwd)/${KUBECTL_BIN}"
 	fi
-}
+	chmod +x "${KUBECTL_BIN}"
+	echo "Removing current Kubernetes configuration from [${KUBE_CONFIG_PATH}]"
+	rm -rf "${KUBE_CONFIG_PATH}" || echo "Failed to remove Kube config. Continuing with the script"
+	echo "Logging in to Kubernetes API [${apiUrl}], with cluster name [${k8sClusterName}] and user [${k8sClusterUser}]"
+	if [[ "${k8sCaData}" != "" ]]; then
+		echo "Creating a temporary file with CA"
+		tmpDir="$(mktemp -d 2>/dev/null || mktemp -d -t 'sc-pipelines-k8s-ca')"
+		tmpCa="${tmpDir}/ca"
+		trap "{ rm -rf \$tmpDir; }" EXIT
+		echo "${k8sCaData}" > "${tmpCa}"
+		k8sCa="${tmpCa}"
+	fi
+	"${KUBECTL_BIN}" config set-cluster "${k8sClusterName}" --server="${kubeUrl}" --certificate-authority="${k8sCa}" --embed-certs=true --kubeconfig="${KUBE_CONFIG_PATH}"
+	# TOKEN will get injected as a credential if present
+	if [[ "${TOKEN}" != "" || "${k8sToken}" != "" ]]; then
+		TOKEN="${TOKEN:-${k8sToken}}"
+		"${KUBECTL_BIN}" config set-credentials "${k8sClusterUser}" --token="${TOKEN}"  --kubeconfig="${KUBE_CONFIG_PATH}"
+	elif [[ "${k8sTokenPath}" != "" ]]; then
+		local tokenContent
+		tokenContent="$(cat "${k8sTokenPath}")"
+		"${KUBECTL_BIN}" config set-credentials "${k8sClusterUser}" --token="${tokenContent}" --kubeconfig="${KUBE_CONFIG_PATH}"
+	elif [[ "${k8sClientKey}" != "" && "${k8sClientCert}" != "" ]]; then
+		"${KUBECTL_BIN}" config set-credentials "${k8sClusterUser}" --certificate-authority="${k8sCa}" --client-key="${k8sClientKey}" --client-certificate="${k8sClientCert}"  --kubeconfig="${KUBE_CONFIG_PATH}"
+	else
+		"${KUBECTL_BIN}" config set-credentials "${k8sClusterUser}" --certificate-authority="${k8sCa}" --kubeconfig="${KUBE_CONFIG_PATH}"
+	fi
+	"${KUBECTL_BIN}" config set-context "${k8sSystemName}" --cluster="${k8sClusterName}" --user="${k8sClusterUser}" --kubeconfig="${KUBE_CONFIG_PATH}"
+	"${KUBECTL_BIN}" config use-context "${k8sSystemName}" --kubeconfig="${KUBE_CONFIG_PATH}"
 
-
-
-function downloadGCloud() {
- if [[ "${OSTYPE}" == linux* ]]; then
-			OS_TYPE="linux"
-		else
-			OS_TYPE="darwin"
-		fi
-		GCLOUD_VERSION="${GCLOUD_VERSION:-172.0.1}"
-		GCLOUD_ARCHIVE="${GCLOUD_ARCHIVE:-google-cloud-sdk-${GCLOUD_VERSION}-${OS_TYPE}-x86_64.tar.gz}"
-		GCLOUD_PARENT_PATH="${GCLOUD_PARENT_PATH:-${HOME}/gcloud}"
-		GCLOUD_PATH="${GCLOUD_PATH:-${GCLOUD_PARENT_PATH}/google-cloud-sdk}"
-		wget -P "${GCLOUD_PARENT_PATH}/" \
-                "https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/${GCLOUD_ARCHIVE}"
-		pushd "${GCLOUD_PARENT_PATH}/" || exit
-		tar xvf "${GCLOUD_ARCHIVE}"
-		rm -vf -- "${GCLOUD_ARCHIVE}"
-		echo "Running the installer"
-		"${GCLOUD_PATH}/install.sh"
-		popd || exit
-
+	echo "CLI version"
+	"${KUBECTL_BIN}" version --kubeconfig="${KUBE_CONFIG_PATH}"
 }
 
 function testDeploy() {
@@ -94,11 +68,11 @@ function testDeploy() {
 	appName=$(retrieveAppName)
 	# Log in to PaaS to start deployment
 	logInToPaas
+
 	deployServices
+
 	# deploy app
 	deployAndRestartAppWithNameForSmokeTests "${appName}" "${PIPELINE_VERSION}"
-	# update the version to release tree
-	setVersionForReleaseTrain "${appName}" "${PIPELINE_VERSION}"
 }
 
 function testRollbackDeploy() {
@@ -132,17 +106,37 @@ function deployService() {
 	local coordinatesSeparator=":"
 	echo "Will deploy service with type [${serviceType}] name [${serviceName}] and coordinates [${serviceCoordinates}]"
 	case ${serviceType} in
-		configserver)
-			deployConfigServer "${serviceName}"
+		rabbitmq)
+			deployRabbitMq "${serviceName}"
 		;;
-        otherservices)
-			deployOtherServices "${serviceName}"
-        ;;
-		claim-contracts)
-			deploy_project  "https://github.com/asokjp/claim-contracts1"
-			;;
-		anthem-microservices-starter-build)
-			#deploy_project  "https://github.com/asokjp/anthem-microservices-starter-build"
+		mysql)
+			deployMySql "${serviceName}"
+		;;
+		eureka)
+			local previousIfs
+			previousIfs="${IFS}"
+			IFS=${coordinatesSeparator} read -r EUREKA_ARTIFACT_ID EUREKA_VERSION <<<"${serviceCoordinates}"
+			IFS="${previousIfs}"
+			deployEureka "${EUREKA_ARTIFACT_ID}:${EUREKA_VERSION}" "${serviceName}"
+		;;
+		stubrunner)
+			local uniqueEurekaName
+			uniqueEurekaName="$(eurekaName)"
+			local uniqueRabbitName
+			uniqueRabbitName="$(rabbitMqName)"
+			local previousIfs
+			previousIfs="${IFS}"
+			IFS=${coordinatesSeparator} read -r STUBRUNNER_ARTIFACT_ID STUBRUNNER_VERSION <<<"${serviceCoordinates}"
+			IFS="${previousIfs}"
+			local parsedStubRunnerUseClasspath
+			parsedStubRunnerUseClasspath="$(echo "${PARSED_YAML}" | jq --arg x "${LOWERCASE_ENV}" '.[$x].services[] | select(.type == "stubrunner") | .useClasspath' | sed 's/^"\(.*\)"$/\1/')"
+			local stubRunnerUseClasspath
+			stubRunnerUseClasspath=$(if [[ "${parsedStubRunnerUseClasspath}" == "null" ]]; then
+				echo "false";
+			else
+				echo "${parsedStubRunnerUseClasspath}";
+			fi)
+			deployStubRunnerBoot "${STUBRUNNER_ARTIFACT_ID}:${STUBRUNNER_VERSION}" "${REPO_WITH_BINARIES}" "${uniqueRabbitName}" "${uniqueEurekaName}" "${serviceName}"
 		;;
 		*)
 			echo "Unknown service [${serviceType}]"
@@ -150,28 +144,6 @@ function deployService() {
 		;;
 	esac
 }
-
-function deploy_project {
-	local project_repo="$1"
-	local project_name
-
-	project_name="$( basename "${project_repo}" )"
-
-	echo "Deploying ${project_name} to artifactory"
-	PROJECT_PARENT_PATH="${HOME}/${project_name}"
-	mkdir "${project_name}"
-	pushd "${project_name}"
-	rm -rf "${project_name}"
-	git clone "${project_repo}" && cd "${project_name}"
-	chmod a+x mvnw
-	./mvnw clean install 
-	popd
-}
-
-function configServerName() {
- echo "${PARSED_YAML}" | jq --arg x "${LOWERCASE_ENV}" '.[$x].services[] | select(.type == "configserver") | .name' | sed 's/^"\(.*\)"$/\1/' || echo ""
-}
-
 
 function eurekaName() {
 	echo "${PARSED_YAML}" | jq --arg x "${LOWERCASE_ENV}" '.[$x].services[] | select(.type == "eureka") | .name' | sed 's/^"\(.*\)"$/\1/' || echo ""
@@ -200,6 +172,17 @@ function appSystemProps() {
 	local mySqlName
 	mySqlName="$(mySqlName)"
 	local mySqlDatabase
+	mySqlDatabase="$(mySqlDatabase)"
+	if [[ "${eurekaName}" != "" && "${eurekaName}" != "null" ]]; then
+		systemProps="${systemProps} -Deureka.client.serviceUrl.defaultZone=http://${eurekaName}:8761/eureka"
+	fi
+	if [[ "${rabbitMqName}" != "" && "${rabbitMqName}" != "null" ]]; then
+		systemProps="${systemProps} -DSPRING_RABBITMQ_ADDRESSES=${rabbitMqName}:5672"
+	fi
+	if [[ "${mySqlName}" != "" && "${mySqlName}" != "null" ]]; then
+		systemProps="${systemProps} -Dspring.datasource.url=jdbc:mysql://${mySqlName}/${mySqlDatabase}"
+	fi
+	echo "${systemProps}"
 }
 
 function deleteService() {
@@ -208,49 +191,6 @@ function deleteService() {
 	echo "Deleting all possible entries with name [${serviceName}]"
 	deleteAppByName "${serviceName}"
 }
-
-function deployConfigServer() {
-local serviceName="${1:-config-server}"
-	local objectDeployed
-	objectDeployed="$(objectDeployed "service" "${serviceName}")"
-	if [[ "${ENVIRONMENT}" == "STAGE" && "${objectDeployed}" == "true" ]]; then
-		echo "Service [${serviceName}] already deployed. Won't redeploy for stage"
-		return
-	fi
-	echo "Waiting for configserver to start"
-	local originalDeploymentFile="${__ROOT}/k8s/configserver.yml"
-	local outputDirectory
-	outputDirectory="$(outputFolder)/k8s"
-	mkdir -p "${outputDirectory}"
-	cp "${originalDeploymentFile}" "${outputDirectory}"
-	local deploymentFile="${outputDirectory}/configserver.yml"
-	if [[ "${ENVIRONMENT}" == "TEST" ]]; then
-		deleteAppByFile "${deploymentFile}"
-	fi
-	replaceApp "${deploymentFile}"
-}
-
-function deployOtherServices() {
-local serviceName="${1:-other-services}"
-	local objectDeployed
-	objectDeployed="$(objectDeployed "service" "${serviceName}")"
-	if [[ "${ENVIRONMENT}" == "STAGE" && "${objectDeployed}" == "true" ]]; then
-		echo "Service [${serviceName}] already deployed. Won't redeploy for stage"
-		return
-	fi
-	echo "Waiting for configserver to start"
-	local originalDeploymentFile="${__ROOT}/k8s/poc1.yml"
-	local outputDirectory
-	outputDirectory="$(outputFolder)/k8s"
-	mkdir -p "${outputDirectory}"
-	cp "${originalDeploymentFile}" "${outputDirectory}"
-	local deploymentFile="${outputDirectory}/poc1.yml"
-	if [[ "${ENVIRONMENT}" == "TEST" ]]; then
-		deleteAppByFile "${deploymentFile}"
-	fi
-	replaceApp "${deploymentFile}"
-}
-
 
 function deployRabbitMq() {
 	local serviceName="${1:-rabbitmq-github}"
@@ -282,26 +222,26 @@ function deployRabbitMq() {
 
 function deployApp() {
 	local fileName="${1}"
-	"${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" create -f "${fileName}"
+	"${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" create -f "${fileName}" --kubeconfig="${KUBE_CONFIG_PATH}"
 }
 
 function replaceApp() {
 	local fileName="${1}"
-	"${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" replace --force -f "${fileName}"
+	"${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" replace --force -f "${fileName}" --kubeconfig="${KUBE_CONFIG_PATH}"
 }
 
 function deleteAppByName() {
 	local serviceName="${1}"
-	"${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" delete secret "${serviceName}" || result=""
-	"${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" delete persistentvolumeclaim "${serviceName}" || result=""
-	"${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" delete pod "${serviceName}" || result=""
-	"${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" delete deployment "${serviceName}" || result=""
-	"${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" delete service "${serviceName}" || result=""
+	"${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" delete secret "${serviceName}" --kubeconfig="${KUBE_CONFIG_PATH}" || result=""
+	"${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" delete persistentvolumeclaim "${serviceName}" --kubeconfig="${KUBE_CONFIG_PATH}" || result=""
+	"${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" delete pod "${serviceName}" --kubeconfig="${KUBE_CONFIG_PATH}" || result=""
+	"${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" delete deployment "${serviceName}" --kubeconfig="${KUBE_CONFIG_PATH}" || result=""
+	"${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" delete service "${serviceName}" --kubeconfig="${KUBE_CONFIG_PATH}" || result=""
 }
 
 function deleteAppByFile() {
 	local file="${1}"
-	"${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" delete -f "${file}" || echo "Failed to delete app by [${file}] file. Continuing with the script"
+	"${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" delete -f "${file}" --kubeconfig="${KUBE_CONFIG_PATH}" || echo "Failed to delete app by [${file}] file. Continuing with the script"
 }
 
 function system {
@@ -315,39 +255,12 @@ function system {
 	echo "${machine}"
 }
 
-function setVersionForReleaseTrain() {
-	local projectName="${1}"
-	echo "project name is ${1}"
-	version="${2}"
-	echo "version is ${version}"
-	git config --global user.email "asok_jp@yahoo.com"
-	git config --global user.name "asokjp"
-	git clone https://asokjp:Lalithamma1@github.com/asokjp/prod-env-deploy.git
-	#git add "${deploymentFile}"
-	cd prod-env-deploy
-	git init
-	local deploymentFile="releasetrain.yml"
-	#local variableName="${1}-version"
-	local currentversion=$(grep  'config-server:' releasetrain.yml | awk '{ print $2}')
-	echo "variableName is ${currentversion}"
-	#sed 's/${currentversion}/${version}/' "${deploymentFile}"
-	sed -i "s/${currentversion}/${version}/" "releasetrain.yml"
-	#substituteVariables "${currentversion}" "${version}" "${deploymentFile}"
-	git add *
-	git commit -m "adding new version"
-	#git remote add origin https://github.com/asokjp/prod-env-deploy.git
-	git push -u origin master
-	cd ..
-	rm -rf prod-env-deploy
-}
-
 function substituteVariables() {
 	local variableName="${1}"
 	local substitution="${2}"
 	local fileName="${3}"
 	local escapedSubstitution
 	escapedSubstitution=$(escapeValueForSed "${substitution}")
-	echo "escapedSubstitution is ${escapedSubstitution}"
 	#echo "Changing [${variableName}] -> [${escapedSubstitution}] for file [${fileName}]"
 	if [[ "${SYSTEM}" == "darwin" ]]; then
 		sed -i "" "s/{{${variableName}}}/${escapedSubstitution}/" "${fileName}"
@@ -379,8 +292,8 @@ function deployMySql() {
 	local mySqlDatabase
 	mySqlDatabase="$(mySqlDatabase)"
 	echo "Generating secret with name [${secretName}]"
-	"${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" delete secret "${secretName}" || echo "Failed to delete secret [${serviceName}]. Continuing with the script"
-	"${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" create secret generic "${secretName}" --from-literal=username="${MYSQL_USER}" --from-literal=password="${MYSQL_PASSWORD}" --from-literal=rootpassword="${MYSQL_ROOT_PASSWORD}"
+	"${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" delete secret "${secretName}" --kubeconfig="${KUBE_CONFIG_PATH}" || echo "Failed to delete secret [${serviceName}]. Continuing with the script"
+	"${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" create secret generic "${secretName}" --kubeconfig="${KUBE_CONFIG_PATH}" --from-literal=username="${MYSQL_USER}" --from-literal=password="${MYSQL_PASSWORD}" --from-literal=rootpassword="${MYSQL_ROOT_PASSWORD}"
 	substituteVariables "appName" "${serviceName}" "${deploymentFile}"
 	substituteVariables "secretName" "${secretName}" "${deploymentFile}"
 	substituteVariables "mysqlDatabase" "${mySqlDatabase}" "${deploymentFile}"
@@ -396,7 +309,7 @@ function deployMySql() {
 function findAppByName() {
 	local serviceName
 	serviceName="${1}"
-	"${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" get pods -o wide -l app="${serviceName}" | awk -v "app=${serviceName}" '$1 ~ app {print($0)}'
+	"${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" get pods -o wide -l app="${serviceName}" --kubeconfig="${KUBE_CONFIG_PATH}" | awk -v "app=${serviceName}" '$1 ~ app {print($0)}'
 }
 
 function deployAndRestartAppWithName() {
@@ -573,17 +486,16 @@ function prepareForSmokeTests() {
 	logInToPaas
 	local applicationPort
 	applicationPort="$(portFromKubernetes "${appName}")"
-	#local stubrunnerAppName
-	#stubrunnerAppName="stubrunner-${appName}"
-	#local stubrunnerPort
-	#stubrunnerPort="$(portFromKubernetes "${stubrunnerAppName}")"
+	local stubrunnerAppName
+	stubrunnerAppName="stubrunner-${appName}"
+	local stubrunnerPort
+	stubrunnerPort="$(portFromKubernetes "${stubrunnerAppName}")"
 	local applicationHost
 	applicationHost="$(applicationHost "${appName}")"
-	#local stubRunnerUrl
-	#stubRunnerUrl="$(applicationHost "${stubrunnerAppName}")"
-	echo "application url: ${applicationHost}:${applicationPort}"
+	local stubRunnerUrl
+	stubRunnerUrl="$(applicationHost "${stubrunnerAppName}")"
 	export APPLICATION_URL="${applicationHost}:${applicationPort}"
-	#export STUBRUNNER_URL="${stubRunnerUrl}:${stubrunnerPort}"
+	export STUBRUNNER_URL="${stubRunnerUrl}:${stubrunnerPort}"
 }
 
 function prepareForE2eTests() {
@@ -620,7 +532,7 @@ function portFromKubernetes() {
 	fi
 	}
 	# '8080' -> 8080
-	"${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" get svc "${appName}" -o jsonpath="${jsonPath}"
+	"${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" get svc "${appName}" -o jsonpath="${jsonPath}" --kubeconfig="${KUBE_CONFIG_PATH}"
 }
 
 function waitForAppToStart() {
@@ -629,7 +541,6 @@ function waitForAppToStart() {
 	port="$(portFromKubernetes "${appName}")"
 	local applicationHost
 	applicationHost="$(applicationHost "${appName}")"
-	echo "application host is - ${applicationHost}" 
 	isAppRunning "${applicationHost}" "${port}"
 }
 
@@ -686,14 +597,14 @@ function label() {
 	local key="${2}"
 	local value="${3}"
 	local type="deployment"
-	"${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" label "${type}" "${appName}" "${key}"="${value}"
+	"${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" label "${type}" "${appName}" "${key}"="${value}" --kubeconfig="${KUBE_CONFIG_PATH}"
 }
 
 function objectDeployed() {
 	local appType="${1}"
 	local appName="${2}"
 	local result
-	result="$("${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" get "${appType}" "${appName}" --ignore-not-found=true)"
+	result="$(${KUBECTL_BIN} --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" get "${appType}" "${appName}" --ignore-not-found=true --kubeconfig="${KUBE_CONFIG_PATH}")"
 	if [[ "${result}" != "" ]]; then
 		echo "true"
 	else
@@ -715,26 +626,14 @@ function stageDeploy() {
 
 function performGreenDeployment() {
 	# TODO: Consider making it less JVM specific
-	#local appName
-	#appName="$(retrieveAppName)"
+	local appName
+	appName="$(retrieveAppName)"
 	# Log in to PaaS to start deployment
 	logInToPaas
 
 	# deploy app
-	performGreenDeploymentOfConfigServer
-	#performGreenDeploymentOfTestedApplication "${appName}"
+	performGreenDeploymentOfTestedApplication "${appName}"
 }
-
-function performGreenDeploymentOfConfigServer() {
-	local appName="config-server"
-	local version=$(grep  'config-server:' releasetrain.yml | awk '{ print $2}')
-	echo "version of config-server is ${version}"
-	downloadHelm
-	helm install  --set configserver.image.name="${DOCKER_REGISTRY_ORGANIZATION}/${appName}:${version}" --set configserver.version="${version}"  --namespace  "${PAAS_NAMESPACE}" ./configserver
-	#waitForAppToStart "${appName}"
-	
-}
-
 
 function performGreenDeploymentOfTestedApplication() {
 	local appName="${1}"
@@ -802,7 +701,7 @@ function rollbackToPreviousVersion() {
 	oldestDeployment="$(oldestDeployment "${appName}" "${changedAppName}")"
 	if [[ "${oldestDeployment}" != "" ]]; then
 		echo "Scaling the green instance to 0 instances. Only blue instance will be running"
-		"${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" scale deployment "${changedAppName}" --replicas=0
+		"${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" scale deployment "${changedAppName}" --replicas=0  --kubeconfig="${KUBE_CONFIG_PATH}"
 	else
 		echo "Will not rollback to blue instance cause it's not there"
 		return 1
@@ -823,7 +722,7 @@ function deleteBlueInstance() {
 	oldestDeployment="$(oldestDeployment "${otherDeployedInstances}")"
 	if [[ "${oldestDeployment}" != "" ]]; then
 		echo "Deleting deployment with name [${oldestDeployment}]"
-		"${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" delete deployment "${oldestDeployment}"
+		"${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" delete deployment "${oldestDeployment}" --kubeconfig="${KUBE_CONFIG_PATH}"
 	else
 		echo "There's no blue instance to remove, skipping this step"
 	fi
@@ -832,7 +731,7 @@ function deleteBlueInstance() {
 function otherDeployedInstances() {
 	local appName="${1}"
 	local changedAppName="${2}"
-	"${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" get deployments -lname="${appName}" --no-headers | awk '{print $1}' | grep -v "${changedAppName}" || echo ""
+	"${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" get deployments -lname="${appName}" --no-headers --kubeconfig="${KUBE_CONFIG_PATH}" | awk '{print $1}' | grep -v "${changedAppName}" || echo ""
 }
 
 function oldestDeployment() {
@@ -856,12 +755,16 @@ export SYSTEM
 SYSTEM="$(system)"
 export KUBE_CONFIG_PATH
 KUBE_CONFIG_PATH="${KUBE_CONFIG_PATH}"
-if [[ ! -z "${KUBE_CONFIG_PATH}" ]]; then
-	KUBE_CONFIG_PATH="$(mktemp -d 2>/dev/null || mktemp -d -t 'sc-pipelines-k8s')"
-	trap '{ rm -rf ${KUBE_CONFIG_PATH}; }' EXIT
+if [[ "${KUBE_CONFIG_PATH}" == "" ]]; then
+	tmpKubeConfigPath="$(mktemp -d 2>/dev/null || mktemp -d -t 'sc-pipelines-k8s')"
+	KUBE_CONFIG_PATH="${tmpKubeConfigPath}/config"
+	trap '{ rm -f ${KUBE_CONFIG_PATH}; }' EXIT
 fi
+echo "Path to Kube config is [${KUBE_CONFIG_PATH}]"
 export KUBECTL_BIN
 KUBECTL_BIN="${KUBECTL_BIN:-kubectl}"
+export TEST_MODE
+TEST_MODE="${TEST_MODE:-false}"
 
 # We need to pass additional, Docker related options to the build
 DEFAULT_DOCKER_OPTIONS="-DDOCKER_REGISTRY_ORGANIZATION=${DOCKER_REGISTRY_ORGANIZATION} -DDOCKER_REGISTRY_URL=${DOCKER_REGISTRY_URL} -DDOCKER_SERVER_ID=${DOCKER_SERVER_ID} -DDOCKER_USERNAME=${DOCKER_USERNAME} -DDOCKER_PASSWORD=${DOCKER_PASSWORD} -DDOCKER_EMAIL=${DOCKER_EMAIL}"
