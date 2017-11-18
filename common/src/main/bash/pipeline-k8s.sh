@@ -755,15 +755,19 @@ function rollbackToPreviousVersion() {
 function deleteBlueInstance() {
 	local appName
 	appName="$(retrieveAppName)"
+	echo "appName is - ${appName}"
 	# Log in to CF to start deployment
 	logInToPaas
 	# find the oldest version and remove it
 	local changedAppName
 	changedAppName="$(dnsEscapedAppNameWithVersionSuffix "${appName}-${PIPELINE_VERSION}")"
+	echo "changedAppName is - ${changedAppName}"
 	local otherDeployedInstances
 	otherDeployedInstances="$(otherDeployedInstances "${appName}" "${changedAppName}" )"
+	echo "otherDeployedInstancesis - ${otherDeployedInstances}"
 	local oldestDeployment
 	oldestDeployment="$(oldestDeployment "${otherDeployedInstances}")"
+	echo "oldestDeployment is - ${oldestDeployment}"
 	if [[ "${oldestDeployment}" != "" ]]; then
 		echo "Deleting deployment with name [${oldestDeployment}]"
 		"${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" delete deployment "${oldestDeployment}"
