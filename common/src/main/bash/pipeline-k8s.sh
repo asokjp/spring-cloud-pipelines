@@ -735,7 +735,7 @@ function performGreenDeploymentOfOtherServices {
 	IFS=',' read -ra ADDR <<< "$repos"
 	for i in "${ADDR[@]}"; do
 	 echo "repo is - $i"
-	 local projectName=echo ("$i" | rev | cut -d'/' -f 1 | rev)
+	 local projectName=$(echo "$i" | rev | cut -d'/' -f 1 | rev)
 	 echo "projectName is - ${projectName}"
 	 if [[ ( "${projectName}" != "config-server1" ) && ( "${projectName}" != "prod-env-deploy" ) ]]; then
 		echo "true"
@@ -749,7 +749,7 @@ function performGreenDeploymentOfOtherServices {
 	done
 	for j in "${ADDR[@]}"; do
 	 echo "repo is - $j"
-	 local projectName=echo ("$j" | rev | cut -d'/' -f 1 | rev)
+	 local projectName=$(echo "$j" | rev | cut -d'/' -f 1 | rev)
 	 echo "projectName is - ${projectName}"
 	 if [[ ( "${projectName}" != "config-server1" ) && ( "${projectName}" != "prod-env-deploy" ) ]]; then
 		echo "true"
