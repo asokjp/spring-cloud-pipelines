@@ -4,8 +4,8 @@ DslFactory dsl = this
 
 // we're parsing the REPOS parameter to retrieve list of repos to build
 String repos = binding.variables['REPOS'] ?:
-		['https://github.com/marcingrzejszczak/github-analytics',
-		 'https://github.com/marcingrzejszczak/github-webhook'].join(',')
+		['https://github.com/asokjp/claimant-service',
+		 'https://github.com/asokjp/config-server1','https://github.com/asokjp/hello-world','https://github.com/asokjp/prod-env-deploy'].join(',')
 List<String> parsedRepos = repos.split(',')
 parsedRepos.each {
 	String gitRepoName = it.split('/').last() - '.git'
@@ -28,7 +28,9 @@ parsedRepos.each {
 			gitRepoName = it.substring(it.lastIndexOf("/") + 1, customBranchIndex)
 		}
 	}
-	String projectName = "${gitRepoName}-pipeline"
+String projectName = "${gitRepoName}-pipeline"	
+if(!projectName.equalsIgnoreCase("prod-env-deploy-pipeline")) {
+
 	dsl.deliveryPipelineView(projectName) {
 		allowPipelineStart()
 		pipelineInstances(5)
@@ -50,4 +52,28 @@ parsedRepos.each {
 			(it / 'pagingEnabled').setValue(true)
 		}
 	}
+	}
+else {
+	dsl.deliveryPipelineView(projectName) {
+		allowPipelineStart()
+		pipelineInstances(5)
+		showAggregatedPipeline(false)
+		columns(1)
+		updateInterval(5)
+		enableManualTriggers()
+		showAvatars()
+		showChangeLog()
+		pipelines {
+			component("Deployment", "prod-env-deploy")
+		}
+		allowRebuild()
+		showDescription()
+		showPromotions()
+		showTotalBuildTime()
+		configure {
+			(it / 'showTestResults').setValue(true)
+			(it / 'pagingEnabled').setValue(true)
+		}
+	}
+}
 }

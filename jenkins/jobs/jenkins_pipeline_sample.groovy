@@ -35,7 +35,7 @@ boolean rollbackStep = binding.variables["DB_ROLLBACK_STEP_REQUIRED"] == null ? 
 boolean stageStep = binding.variables["DEPLOY_TO_STAGE_STEP_REQUIRED"] == null ? true : Boolean.parseBoolean(binding.variables["DEPLOY_TO_STAGE_STEP_REQUIRED"])
 String scriptsDir = binding.variables["SCRIPTS_DIR"] ?: "${WORKSPACE}/common/src/main/bash"
 // TODO: Automate customization of this value
-String toolsRepo = binding.variables["TOOLS_REPOSITORY"] ?: "https://github.com/spring-cloud/spring-cloud-pipelines"
+String toolsRepo = binding.variables["TOOLS_REPOSITORY"] ?: "https://asokjp/spring-cloud/spring-cloud-pipelines"
 String toolsBranch = binding.variables["TOOLS_BRANCH"] ?: "master"
 // TODO: K8S - consider parametrization
 // remove::start[K8S]
@@ -43,11 +43,11 @@ String mySqlRootCredential = binding.variables["MYSQL_ROOT_CREDENTIAL_ID"] ?: ""
 String mySqlCredential = binding.variables["MYSQL_CREDENTIAL_ID"] ?: ""
 // remove::end[K8S]
 
-
+String prodDeployrepo="https://github.com/asokjp/prod-env-deploy.git"
 // we're parsing the REPOS parameter to retrieve list of repos to build
 String repos = binding.variables["REPOS"] ?:
-		["https://github.com/marcingrzejszczak/github-analytics",
-		 "https://github.com/marcingrzejszczak/github-webhook"].join(",")
+		["https://github.com/asokjp/claimant-service",
+		 "https://github.com/asokjp/config-server1","https://github.com/asokjp/hello-world","https://github.com/asokjp/prod-env-deploy"].join(",")
 List<String> parsedRepos = repos.split(",")
 parsedRepos.each {
 	String gitRepoName = it.split('/').last() - '.git'
@@ -83,8 +83,9 @@ parsedRepos.each {
 	}
 	
 	String projectName = "${gitRepoName}-pipeline"
-
+    System.out.println (projectName)
 	//  ======= JOBS =======
+if(!projectName.equalsIgnoreCase("prod-env-deploy-pipeline")) {
 	dsl.job("${projectName}-build") {
 		deliveryPipelineConfiguration('Build', 'Build and Upload')
 		triggers {
@@ -618,42 +619,19 @@ parsedRepos.each {
 		${WORKSPACE}/.git/tools/common/src/main/bash/stage_e2e.sh
 		''')
 			}
-			publishers {
-				archiveJunit(testReports)
-				String nextJob = "${projectName}-prod-env-deploy"
-				if (autoProd) {
-					downstreamParameterized {
-						trigger(nextJob) {
-							parameters {
-								currentBuild()
-							}
-						}
-					}
-				} else {
-					buildPipelineTrigger(nextJob) {
-						parameters {
-							currentBuild()
-						}
-					}
-				}
-			}
 		}
 	}
-
-	dsl.job("${projectName}-prod-env-deploy") {
-		deliveryPipelineConfiguration('Prod', 'Deploy to prod')
+}
+if(projectName.equalsIgnoreCase("prod-env-deploy-pipeline")) {
+	dsl.job("prod-env-deploy") {
+		deliveryPipelineConfiguration('Prod', 'Prod deploy')
+		triggers {
+			cron(cronValue)
+			githubPush()
+		}
 		wrappers {
-			deliveryPipelineVersion('${ENV,var="PIPELINE_VERSION"}', true)
-			maskPasswords()
+			deliveryPipelineVersion(pipelineVersion, true)
 			environmentVariables(defaults.defaultEnvVars)
-			credentialsBinding {
-				// remove::start[CF]
-				if (cfProdCredentialId) usernamePassword('PAAS_PROD_USERNAME', 'PAAS_PROD_PASSWORD', cfProdCredentialId)
-				// remove::end[CF]
-				// remove::start[K8S]
-				if (k8sProdTokenCredentialId) string("TOKEN", k8sProdTokenCredentialId)
-				// remove::end[K8S]
-			}
 			timestamps()
 			colorizeOutput()
 			maskPasswords()
@@ -662,13 +640,17 @@ parsedRepos.each {
 				failBuild()
 				writeDescription('Build failed due to timeout after {0} minutes of inactivity')
 			}
+			credentialsBinding {
+				if (repoWithBinariesCredentials) usernamePassword('M2_SETTINGS_REPO_USERNAME', 'M2_SETTINGS_REPO_PASSWORD', repoWithBinariesCredentials)
+				if (dockerCredentials) usernamePassword('DOCKER_USERNAME', 'DOCKER_PASSWORD', dockerCredentials)
+			}
 		}
 		scm {
 			git {
 				remote {
 					name('origin')
 					url(fullGitRepo)
-					branch('dev/${PIPELINE_VERSION}')
+					branch(branchName)
 					credentials(gitUseSshKey ? gitSshCredentials : gitCredentials)
 				}
 				extensions {
@@ -701,11 +683,12 @@ parsedRepos.each {
 				// remove::end[CF]
 			}
 			// end::start[K8S]
-			buildPipelineTrigger("${projectName}-prod-env-complete,${projectName}-prod-env-rollback") {
+			buildPipelineTrigger("prod-env-complete,prod-env-rollback") {
 				parameters {
 					currentBuild()
 				}
 			}
+
 			git {
 				forcePush(true)
 				pushOnlyIfSuccess()
@@ -715,9 +698,10 @@ parsedRepos.each {
 				}
 			}
 		}
+		}
 	}
 
-	dsl.job("${projectName}-prod-env-rollback") {
+	dsl.job("prod-env-rollback") {
 		deliveryPipelineConfiguration('Prod', 'Rollback')
 		wrappers {
 			deliveryPipelineVersion('${ENV,var="PIPELINE_VERSION"}', true)
@@ -744,7 +728,7 @@ parsedRepos.each {
 			git {
 				remote {
 					name('origin')
-					url(fullGitRepo)
+					url(prodDeployrepo)
 					branch('dev/${PIPELINE_VERSION}')
 					credentials(gitUseSshKey ? gitSshCredentials : gitCredentials)
 				}
@@ -763,7 +747,7 @@ parsedRepos.each {
 		}
 	}
 
-	dsl.job("${projectName}-prod-env-complete") {
+	dsl.job("prod-env-complete") {
 		deliveryPipelineConfiguration('Prod', 'Complete switch over')
 		wrappers {
 			deliveryPipelineVersion('${ENV,var="PIPELINE_VERSION"}', true)
@@ -790,7 +774,7 @@ parsedRepos.each {
 			git {
 				remote {
 					name('origin')
-					url(fullGitRepo)
+					url(prodDeployrepo)
 					branch('dev/${PIPELINE_VERSION}')
 					credentials(gitUseSshKey ? gitSshCredentials : gitCredentials)
 				}
@@ -808,7 +792,8 @@ parsedRepos.each {
 		''')
 		}
 	}
-}
+	
+}	
 
 //  ======= JOBS =======
 
