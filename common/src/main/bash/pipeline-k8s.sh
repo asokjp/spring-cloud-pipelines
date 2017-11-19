@@ -741,6 +741,18 @@ function performGreenDeploymentOfOtherServices {
 		echo "true"
 		local version=$(grep  "${projectName}:" releasetrain.yml | awk '{ print $2}')
 		echo "version of ${projectName} is ${version}"
+		changedAppName="$(escapeValueForDns "${projectName}-${version}")"
+		echo "Will name the application [${changedAppName}]"
+		local otherDeployedInstances
+		otherDeployedInstances="$(otherDeployedInstances "${appName}" "${changedAppName}")"
+		if [[ "${otherDeployedInstances}" != "" ]]; then
+			local numberOfDeployments
+			numberOfDeployments="$(echo "${otherDeployedInstances}" | wc -l | awk '{print $1}')"
+			if ((numberOfDeployments > 1)); then
+				echo "Green already deployed. Please complete switch over first"
+				return 1
+			fi
+		fi
 		helmoptions="${helmoptions} --set ${projectName}.image.name=${DOCKER_REGISTRY_ORGANIZATION}/${projectName}:${version} --set ${projectName}.version=${version} "
 	else
 		echo "false"
@@ -780,6 +792,18 @@ function performGreenDeploymentOfConfigServer() {
 	local appName="config-server"
 	local version=$(grep  'config-server:' releasetrain.yml | awk '{ print $2}')
 	echo "version of config-server is ${version}"
+	changedAppName="$(escapeValueForDns "${appName}-${version}")"
+	echo "Will name the application [${changedAppName}]"
+	local otherDeployedInstances
+	otherDeployedInstances="$(otherDeployedInstances "${appName}" "${changedAppName}")"
+	if [[ "${otherDeployedInstances}" != "" ]]; then
+		local numberOfDeployments
+		numberOfDeployments="$(echo "${otherDeployedInstances}" | wc -l | awk '{print $1}')"
+		if ((numberOfDeployments > 1)); then
+			echo "Green already deployed. Please complete switch over first"
+			return 1
+		fi
+	fi
 	downloadHelm
 	local releaseVersion="$(getReleaseVersionFromPipelineVersion "${PIPELINE_VERSION}" )"
 	echo "releaseVersion is - ${releaseVersion}"
