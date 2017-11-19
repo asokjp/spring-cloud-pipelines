@@ -743,15 +743,11 @@ function performGreenDeploymentOfOtherServices {
 		echo "version of ${projectName} is ${version}"
 		changedAppName="$(escapeValueForDns "${projectName}-${version}")"
 		echo "Will name the application [${changedAppName}]"
-		local otherDeployedInstances
-		otherDeployedInstances="$(otherDeployedInstances "${appName}" "${changedAppName}")"
-		if [[ "${otherDeployedInstances}" != "" ]]; then
-			local numberOfDeployments
-			numberOfDeployments="$(echo "${otherDeployedInstances}" | wc -l | awk '{print $1}')"
-			if ((numberOfDeployments > 1)); then
-				echo "Green already deployed. Please complete switch over first"
-				return 1
-			fi
+		local serviceDeployed
+		serviceDeployed="$(objectDeployed "service" "${projectName}")"
+		echo "Service already deployed? [${serviceDeployed}]"
+		if [[ "${serviceDeployed}" == "true" ]]; then
+			"${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" delete service "${projectName}" || result=""
 		fi
 		helmoptions="${helmoptions} --set ${projectName}.image.name=${DOCKER_REGISTRY_ORGANIZATION}/${projectName}:${version} --set ${projectName}.version=${version} "
 	else
@@ -794,20 +790,16 @@ function performGreenDeploymentOfConfigServer() {
 	echo "version of config-server is ${version}"
 	changedAppName="$(escapeValueForDns "${appName}-${version}")"
 	echo "Will name the application [${changedAppName}]"
-	local otherDeployedInstances
-	otherDeployedInstances="$(otherDeployedInstances "${appName}" "${changedAppName}")"
-	if [[ "${otherDeployedInstances}" != "" ]]; then
-		local numberOfDeployments
-		numberOfDeployments="$(echo "${otherDeployedInstances}" | wc -l | awk '{print $1}')"
-		if ((numberOfDeployments > 1)); then
-			echo "Green already deployed. Please complete switch over first"
-			return 1
-		fi
-	fi
 	downloadHelm
 	local releaseVersion="$(getReleaseVersionFromPipelineVersion "${PIPELINE_VERSION}" )"
 	echo "releaseVersion is - ${releaseVersion}"
 	modifyChartVersion "${releaseVersion}" "config-server/Chart.yaml"
+	local serviceDeployed
+	serviceDeployed="$(objectDeployed "service" "${appName}")"
+	echo "Service already deployed? [${serviceDeployed}]"
+	if [[ "${serviceDeployed}" == "true" ]]; then
+		"${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" delete service "${appName}" || result=""
+	fi
 	helm install  --set configserver.image.name="${DOCKER_REGISTRY_ORGANIZATION}/${appName}:${version}" --set configserver.version="${version}"  --namespace  "${PAAS_NAMESPACE}" ./config-server
 	#waitForAppToStart "${appName}"
 	git config --global user.email "asok_jp@yahoo.com"
