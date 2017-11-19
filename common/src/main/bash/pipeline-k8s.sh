@@ -752,7 +752,7 @@ function performGreenDeploymentOfOtherServices {
 	echo "releaseVersion is - ${releaseVersion}"
 	modifyChartVersion "${releaseVersion}" "otherservices/Chart.yaml"
 	echo "helmoptions are - ${helmoptions}"
-	helm install "${helmoptions}"  --namespace  "${PAAS_NAMESPACE}" ./otherservices
+	helm install ${helmoptions}  --namespace  "${PAAS_NAMESPACE}" ./otherservices
 	for j in "${ADDR[@]}"; do
 	 echo "repo is - $j"
 	 local projectName=$(echo "$j" | rev | cut -d'/' -f 1 | rev)
