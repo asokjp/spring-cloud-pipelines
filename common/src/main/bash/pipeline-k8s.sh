@@ -727,7 +727,7 @@ function performGreenDeployment() {
 }
 
 function performGreenDeploymentOfOtherServices {
-	local helmoptions="--set "
+	local helmoptions=""
 	git config --global user.email "asok_jp@yahoo.com"
 	git config --global user.name "asokjp"
 	local repos="${REPOS}"
@@ -741,12 +741,18 @@ function performGreenDeploymentOfOtherServices {
 		echo "true"
 		local version=$(grep  "${projectName}:" releasetrain.yml | awk '{ print $2}')
 		echo "version of ${projectName} is ${version}"
-		helmoptions="${helmoptions} ${projectName}.image.name=${DOCKER_REGISTRY_ORGANIZATION}/${projectName}:${version} --set ${projectName}.version=${version}"
+		helmoptions="${helmoptions} --set ${projectName}.image.name=${DOCKER_REGISTRY_ORGANIZATION}/${projectName}:${version} --set ${projectName}.version=${version} "
 	else
 		echo "false"
 		
 	fi
 	done
+	downloadHelm
+	local releaseVersion="$(getReleaseVersionFromPipelineVersion "${PIPELINE_VERSION}" )"
+	echo "releaseVersion is - ${releaseVersion}"
+	modifyChartVersion "${releaseVersion}" "otherservices/Chart.yaml"
+	echo "helmoptions are - ${helmoptions}"
+	helm install "${helmoptions}"  --namespace  "${PAAS_NAMESPACE}" ./otherservices
 	for j in "${ADDR[@]}"; do
 	 echo "repo is - $j"
 	 local projectName=$(echo "$j" | rev | cut -d'/' -f 1 | rev)
@@ -768,12 +774,6 @@ function performGreenDeploymentOfOtherServices {
 		
 	fi
 	done
-	downloadHelm
-	local releaseVersion="$(getReleaseVersionFromPipelineVersion "${PIPELINE_VERSION}" )"
-	echo "releaseVersion is - ${releaseVersion}"
-	modifyChartVersion "${releaseVersion}" "otherservices/Chart.yaml"
-	echo "helmoptions are - ${helmoptions}"
-	helm install "${helmoptions}"  --namespace  "${PAAS_NAMESPACE}" ./otherservices
 }
 
 function performGreenDeploymentOfConfigServer() {
