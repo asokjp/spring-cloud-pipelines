@@ -66,6 +66,15 @@ function downloadHelm() {
 	fi
 }
 
+function downloadIstio() {
+	if ! [ -x "/usr/local/bin/istioctl" ]; then
+		echo "installing istio.."
+		curl -L https://git.io/getLatestIstio | sh -
+		chmod 700 /istio-0.2.7/bin/istioctl
+		mv /istio-0.2.7/bin/istioctl /usr/local/bin
+	fi
+}
+
 
 
 function downloadGCloud() {
@@ -898,6 +907,30 @@ function rollbackToPreviousVersion() {
 		echo "Will not rollback to blue instance cause it's not there"
 		return 1
 	fi
+}
+
+function switchInternalUsers() {
+	downloadIstio
+	local fileName="route-rule-internal-users.yaml"
+	local repos="${REPOS}"
+	echo "repos are - ${repos}"
+	IFS=',' read -ra ADDR <<< "$repos"
+	for i in "${ADDR[@]}"; do
+	 echo "repo is - $i"
+	 local projectName=$(echo "$i" | rev | cut -d'/' -f 1 | rev)
+	 echo "projectName is - ${projectName}"
+	 if [[ ( "${projectName}" != "config-server1" ) && ( "${projectName}" != "prod-env-deploy" ) ]]; then
+		echo "true"
+		local pipelineversion=$(grep  "${projectName}:" releasetrain.yml | awk '{ print $2}')
+		echo "version of ${projectName} is ${pipelineversion}"
+		substituteVariables "version" "${pipelineversion}" "${fileName}"
+		substituteVariables "appName" "${projectName}" "${fileName}"
+		istioctl create -f ${fileName}
+	else
+		echo "false"
+		
+	fi
+	done
 }
 
 function deleteBlueInstance() {
