@@ -683,7 +683,7 @@ if(projectName.equalsIgnoreCase("prod-env-deploy-pipeline")) {
 				// remove::end[CF]
 			}
 			// end::start[K8S]
-			buildPipelineTrigger("prod-env-complete,prod-env-rollback") {
+			buildPipelineTrigger("switch-internal-users") {
 				parameters {
 					currentBuild()
 				}
@@ -698,9 +698,61 @@ if(projectName.equalsIgnoreCase("prod-env-deploy-pipeline")) {
 				}
 			}
 		}
+	}
+	
+	dsl.job("switch-internal-users") {
+		deliveryPipelineConfiguration('Prod', 'switch internal users')
+		wrappers {
+			deliveryPipelineVersion('${ENV,var="PIPELINE_VERSION"}', true)
+			maskPasswords()
+			environmentVariables(defaults.defaultEnvVars)
+			credentialsBinding {
+				// remove::start[CF]
+				if (cfProdCredentialId) usernamePassword('PAAS_PROD_USERNAME', 'PAAS_PROD_PASSWORD', cfProdCredentialId)
+				// remove::end[CF]
+				// remove::start[K8S]
+				if(k8sTestTokenCredentialId) string("TOKEN", k8sTestTokenCredentialId)
+				// remove::end[K8S]
+			}
+			timestamps()
+			colorizeOutput()
+			maskPasswords()
+			timeout {
+				noActivity(300)
+				failBuild()
+				writeDescription('Build failed due to timeout after {0} minutes of inactivity')
+			}
+		}
+		scm {
+			git {
+				remote {
+					name('origin')
+					url(fullGitRepo)
+					branch('dev/${PIPELINE_VERSION}')
+					credentials(gitUseSshKey ? gitSshCredentials : gitCredentials)
+				}
+				extensions {
+					wipeOutWorkspace()
+				}
+			}
+		}
+		steps {
+			shell("""#!/bin/bash
+		rm -rf .git/tools && git clone -b ${toolsBranch} --single-branch ${toolsRepo} .git/tools 
+		""")
+			shell('''#!/bin/bash
+		${WORKSPACE}/.git/tools/common/src/main/bash/prod_internal_switch.sh
+		''')
+		}
+		publishers {
+			buildPipelineTrigger("prod-env-complete,prod-env-rollback") {
+				parameters {
+					currentBuild()
+				}
+			}
 		}
 	}
-
+	
 	dsl.job("prod-env-rollback") {
 		deliveryPipelineConfiguration('Prod', 'Rollback')
 		wrappers {
@@ -728,7 +780,7 @@ if(projectName.equalsIgnoreCase("prod-env-deploy-pipeline")) {
 			git {
 				remote {
 					name('origin')
-					url(prodDeployrepo)
+					url(fullGitRepo)
 					branch('dev/${PIPELINE_VERSION}')
 					credentials(gitUseSshKey ? gitSshCredentials : gitCredentials)
 				}
@@ -746,7 +798,7 @@ if(projectName.equalsIgnoreCase("prod-env-deploy-pipeline")) {
 		''')
 		}
 	}
-
+	
 	dsl.job("prod-env-complete") {
 		deliveryPipelineConfiguration('Prod', 'Complete switch over')
 		wrappers {
@@ -774,7 +826,7 @@ if(projectName.equalsIgnoreCase("prod-env-deploy-pipeline")) {
 			git {
 				remote {
 					name('origin')
-					url(prodDeployrepo)
+					url(fullGitRepo)
 					branch('dev/${PIPELINE_VERSION}')
 					credentials(gitUseSshKey ? gitSshCredentials : gitCredentials)
 				}
@@ -792,7 +844,7 @@ if(projectName.equalsIgnoreCase("prod-env-deploy-pipeline")) {
 		''')
 		}
 	}
-	
+}
 }	
 
 //  ======= JOBS =======

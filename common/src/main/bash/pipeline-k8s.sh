@@ -923,7 +923,46 @@ function switchInternalUsers() {
 		cp ${fileName}.yaml ${fileNameForProject}
 		substituteVariables "version" "${pipelineversion}" "${fileNameForProject}"
 		substituteVariables "appName" "${projectName}" "${fileNameForProject}"
-		istioctl create -f ${fileNameForProject}
+		routeRuleDeployed="$(objectDeployed "RouteRule" "${projectName}-default")"
+		echo "Routing rule ${projectName}-default already deployed? [${routeRuleDeployed}]"
+		if [[ "${routeRuleDeployed}" == "true" ]]; then
+			"${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" delete RouteRule "${projectName}-default" || result=""
+		fi
+		istioctl create -f ${fileNameForProject} --namespace="${PAAS_NAMESPACE}"
+	else
+		echo "false"
+		
+	fi
+	done
+}
+
+function switchAllUsers() {
+	downloadIstio
+	local fileName="route-rule-all-users"
+	local repos="${REPOS}"
+	echo "repos are - ${repos}"
+	IFS=',' read -ra ADDR <<< "$repos"
+	for i in "${ADDR[@]}"; do
+	 echo "repo is - $i"
+	 local projectName=$(echo "$i" | rev | cut -d'/' -f 1 | rev)
+	 echo "projectName is - ${projectName}"
+	 if [[ ( "${projectName}" != "config-server1" ) && ( "${projectName}" != "prod-env-deploy" ) ]]; then
+		echo "true"
+		local pipelineversion=$(grep  "${projectName}:" releasetrain.yml | awk '{ print $2}')
+		echo "version of ${projectName} is ${pipelineversion}"
+		#local releaseVersion="$(getReleaseVersionFromPipelineVersion "${version}" )"
+		#echo "deployment version of ${projectName} is ${releaseVersion}"
+		local fileNameForProject="${fileName}-${projectName}.yaml"
+		cp ${fileName}.yaml ${fileNameForProject}
+		substituteVariables "version" "${pipelineversion}" "${fileNameForProject}"
+		substituteVariables "appName" "${projectName}" "${fileNameForProject}"
+		routeRuleDeployed="$(objectDeployed "RouteRule" "${projectName}-default")"
+		echo "Routing rule ${projectName}-default already deployed? [${routeRuleDeployed}]"
+		if [[ "${routeRuleDeployed}" == "true" ]]; then
+			istioctl replace -f ${fileNameForProject} --namespace="${PAAS_NAMESPACE}"
+		else
+			istioctl create -f ${fileNameForProject} --namespace="${PAAS_NAMESPACE}"
+		fi
 	else
 		echo "false"
 		
