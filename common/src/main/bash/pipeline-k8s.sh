@@ -905,7 +905,7 @@ function rollbackToPreviousVersion() {
 
 function switchInternalUsers() {
 	downloadIstio
-	local fileName="route-rule-internal-users.yaml"
+	local fileName="route-rule-internal-users"
 	local repos="${REPOS}"
 	echo "repos are - ${repos}"
 	IFS=',' read -ra ADDR <<< "$repos"
@@ -919,9 +919,11 @@ function switchInternalUsers() {
 		echo "version of ${projectName} is ${pipelineversion}"
 		local releaseVersion="$(getReleaseVersionFromPipelineVersion "${version}" )"
 		echo "deployment version of ${projectName} is ${releaseVersion}"
-		substituteVariables "version" "${releaseVersion}" "${fileName}"
-		substituteVariables "appName" "${projectName}" "${fileName}"
-		istioctl create -f route-rule-internal-users.yaml
+		local fileNameForProject="${fileName}-${projectName}.yaml"
+		cp ${fileName}.yaml ${fileNameForProject}
+		substituteVariables "version" "${releaseVersion}" "${fileNameForProject}"
+		substituteVariables "appName" "${projectName}" "${fileNameForProject}"
+		istioctl create -f ${fileNameForProject}
 	else
 		echo "false"
 		
