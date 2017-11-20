@@ -921,7 +921,7 @@ function switchInternalUsers() {
 		echo "true"
 		local pipelineversion=$(grep  "${projectName}:" releasetrain.yml | awk '{ print $2}')
 		echo "version of ${projectName} is ${pipelineversion}"
-		substituteVariables "version" "${pipelineversion}" "${fileName}"
+		#substituteVariables "version" "${pipelineversion}" "${fileName}"
 		substituteVariables "appName" "${projectName}" "${fileName}"
 		istioctl create -f ${fileName}
 	else
