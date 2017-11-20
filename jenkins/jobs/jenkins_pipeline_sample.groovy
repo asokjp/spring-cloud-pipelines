@@ -692,7 +692,7 @@ if(projectName.equalsIgnoreCase("prod-env-deploy-pipeline")) {
 			git {
 				forcePush(true)
 				pushOnlyIfSuccess()
-				tag('origin', "prod/\${PIPELINE_VERSION}") {
+				tag('origin', "dev/\${PIPELINE_VERSION}") {
 					create()
 					update()
 				}
