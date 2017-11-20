@@ -70,8 +70,8 @@ function downloadIstio() {
 	if ! [ -x "/usr/local/bin/istioctl" ]; then
 		echo "installing istio.."
 		curl -L https://git.io/getLatestIstio | sh -
-		chmod 700 /istio-0.2.7/bin/istioctl
-		mv /istio-0.2.7/bin/istioctl /usr/local/bin
+		chmod 700 /var/jenkins_home/workspace/prod-env-complete/istio-0.2.12/bin
+		mv /var/jenkins_home/workspace/prod-env-complete/istio-0.2.12/bin/istioctl /usr/local/bin
 	fi
 }
 
