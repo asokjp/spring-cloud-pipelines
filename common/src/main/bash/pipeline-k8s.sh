@@ -51,12 +51,6 @@ function logInToPaas() {
 }
 
 function downloadHelm() {
-#HELM_VERSION="${HELM_VERSION:-v2.7.0-linux-amd64}"
-#HELM_ARCHIVE="${HELM_ARCHIVE:-helm-${HELM_VERSION}-${OS_TYPE}.tar.gz}"
-#wget "https://kubernetes-helm.storage.googleapis.com/${HELM_ARCHIVE}"
-#tar xvf "${HELM_ARCHIVE}"
-#rm -vf -- "${HELM_ARCHIVE}"
-#mv linux-amd64/helm /usr/local/bin/helm
 	if ! [ -x "/usr/local/bin/helm" ]; then
 		echo "installing helm.."
 		curl https://raw.githubusercontent.com/kubernetes/helm/master/scripts/get > get_helm.sh
@@ -748,24 +742,25 @@ function performGreenDeploymentOfOtherServices {
 		echo "true"
 		local version=$(grep  "${projectName}:" releasetrain.yml | awk '{ print $2}')
 		echo "version of ${projectName} is ${version}"
-		changedAppName="$(escapeValueForDns "${projectName}-${version}")"
-		echo "Will name the application [${changedAppName}]"
+		# converting to kubernetes accetable format
+		local releaseVersion="$(getReleaseVersionFromPipelineVersion "${version}" )"
+		echo "deployment version of ${projectName} is ${releaseVersion}"
 		local serviceDeployed
 		serviceDeployed="$(objectDeployed "service" "${projectName}")"
 		echo "Service already deployed? [${serviceDeployed}]"
 		if [[ "${serviceDeployed}" == "true" ]]; then
 			"${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" delete service "${projectName}" || result=""
 		fi
-		helmoptions="${helmoptions} --set ${projectName}.image.name=${DOCKER_REGISTRY_ORGANIZATION}/${projectName}:${version} --set ${projectName}.version=${version} "
+		helmoptions="${helmoptions} --set ${projectName}.image.name=${DOCKER_REGISTRY_ORGANIZATION}/${projectName}:${version} --set ${projectName}.version=${releaseVersion} "
 	else
 		echo "false"
 		
 	fi
 	done
 	downloadHelm
-	local releaseVersion="$(getReleaseVersionFromPipelineVersion "${PIPELINE_VERSION}" )"
-	echo "releaseVersion is - ${releaseVersion}"
-	modifyChartVersion "${releaseVersion}" "otherservices/Chart.yaml"
+	local chartVersion="$(getReleaseVersionFromPipelineVersion "${PIPELINE_VERSION}" )"
+	echo "Chart Version is - ${chartVersion}"
+	modifyChartVersion "${chartVersion}" "otherservices/Chart.yaml"
 	echo "helmoptions are - ${helmoptions}"
 	helm install ${helmoptions}  --namespace  "${PAAS_NAMESPACE}" ./otherservices
 	for j in "${ADDR[@]}"; do
@@ -795,19 +790,20 @@ function performGreenDeploymentOfConfigServer() {
 	local appName="config-server"
 	local version=$(grep  'config-server:' releasetrain.yml | awk '{ print $2}')
 	echo "version of config-server is ${version}"
-	changedAppName="$(escapeValueForDns "${appName}-${version}")"
-	echo "Will name the application [${changedAppName}]"
+	# converting to kubernetes accetable format
+	local releaseVersion="$(getReleaseVersionFromPipelineVersion "${version}" )"
+	echo "deployment version of config-server is ${releaseVersion}"
 	downloadHelm
-	local releaseVersion="$(getReleaseVersionFromPipelineVersion "${PIPELINE_VERSION}" )"
-	echo "releaseVersion is - ${releaseVersion}"
-	modifyChartVersion "${releaseVersion}" "config-server/Chart.yaml"
+	local chartVersion="$(getReleaseVersionFromPipelineVersion "${PIPELINE_VERSION}" )"
+	echo "chartVersion is - ${chartVersion}"
+	modifyChartVersion "${chartVersion}" "config-server/Chart.yaml"
 	local serviceDeployed
 	serviceDeployed="$(objectDeployed "service" "${appName}")"
 	echo "Service already deployed? [${serviceDeployed}]"
 	if [[ "${serviceDeployed}" == "true" ]]; then
 		"${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" delete service "${appName}" || result=""
 	fi
-	helm install  --set configserver.image.name="${DOCKER_REGISTRY_ORGANIZATION}/${appName}:${version}" --set configserver.version="${version}"  --namespace  "${PAAS_NAMESPACE}" ./config-server
+	helm install  --set configserver.image.name="${DOCKER_REGISTRY_ORGANIZATION}/${appName}:${version}" --set configserver.version="${releaseVersion}"  --namespace  "${PAAS_NAMESPACE}" ./config-server
 	#waitForAppToStart "${appName}"
 	git config --global user.email "asok_jp@yahoo.com"
 	git config --global user.name "asokjp"
@@ -921,8 +917,10 @@ function switchInternalUsers() {
 		echo "true"
 		local pipelineversion=$(grep  "${projectName}:" releasetrain.yml | awk '{ print $2}')
 		echo "version of ${projectName} is ${pipelineversion}"
-		#substituteVariables "version" "${pipelineversion}" "${fileName}"
-		#substituteVariables "appName" "${projectName}" "${fileName}"
+		local releaseVersion="$(getReleaseVersionFromPipelineVersion "${version}" )"
+		echo "deployment version of ${projectName} is ${releaseVersion}"
+		substituteVariables "version" "${releaseVersion}" "${fileName}"
+		substituteVariables "appName" "${projectName}" "${fileName}"
 		istioctl create -f route-rule-internal-users.yaml
 	else
 		echo "false"
