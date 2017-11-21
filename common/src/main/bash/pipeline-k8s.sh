@@ -756,7 +756,7 @@ function performGreenDeploymentOfOtherServices {
 	echo "Chart Version is - ${chartVersion}"
 	modifyChartVersion "${chartVersion}" "otherservices/Chart.yaml"
 	echo "helmoptions are - ${helmoptions}"
-	local releaseNote=echo $(helm install ${helmoptions} --namespace  "${PAAS_NAMESPACE}" ./otherservices)
+	local releaseNote=helm install ${helmoptions} --namespace  "${PAAS_NAMESPACE}" ./otherservices || echo ""
 	# now tagging each project to production
 	for j in "${ADDR[@]}"; do
 	 echo "repo is - $j"
@@ -804,7 +804,7 @@ function performGreenDeploymentOfConfigServer() {
 	if [[ "${serviceDeployed}" == "true" ]]; then
 		"${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" delete service "${appName}" || result=""
 	fi
-	local releaseNote=echo $(helm install  --set configserver.image.name="${DOCKER_REGISTRY_ORGANIZATION}/${appName}:${version}" --set configserver.version="${version}"  --namespace  "${PAAS_NAMESPACE}" ./config-server)
+	local releaseNote= helm install  --set configserver.image.name="${DOCKER_REGISTRY_ORGANIZATION}/${appName}:${version}" --set configserver.version="${version}"  --namespace  "${PAAS_NAMESPACE}" ./config-server || echo ""
 	local helmversion=$(grep  'config-server-release:' releasetrain.yml | awk '{ print $2}')
 	echo "variableName is ${helmversion}"
 	local releaseName=${"releaseNote"}| grep 'NAME:' | awk '{ print $2}'
