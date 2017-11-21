@@ -324,19 +324,13 @@ function setVersionForReleaseTrain() {
 	git config --global user.email "asok_jp@yahoo.com"
 	git config --global user.name "asokjp"
 	git clone https://asokjp:Lalithamma1@github.com/asokjp/prod-env-deploy.git
-	#git add "${deploymentFile}"
 	cd prod-env-deploy
 	git init
-	local deploymentFile="releasetrain.yml"
-	#local variableName="${1}-version"
 	local currentversion=$(grep  'config-server:' releasetrain.yml | awk '{ print $2}')
 	echo "variableName is ${currentversion}"
-	#sed 's/${currentversion}/${version}/' "${deploymentFile}"
 	sed -i "s/${currentversion}/${version}/" "releasetrain.yml"
-	#substituteVariables "${currentversion}" "${version}" "${deploymentFile}"
 	git add *
 	git commit -m "adding new version"
-	#git remote add origin https://github.com/asokjp/prod-env-deploy.git
 	git push -u origin master
 	cd ..
 	rm -rf prod-env-deploy
@@ -762,7 +756,8 @@ function performGreenDeploymentOfOtherServices {
 	echo "Chart Version is - ${chartVersion}"
 	modifyChartVersion "${chartVersion}" "otherservices/Chart.yaml"
 	echo "helmoptions are - ${helmoptions}"
-	helm install ${helmoptions}  --namespace  "${PAAS_NAMESPACE}" ./otherservices
+	helm install ${helmoptions} --name otherservices-${chartVersion} --namespace  "${PAAS_NAMESPACE}" ./otherservices
+	# now tagging each project to production
 	for j in "${ADDR[@]}"; do
 	 echo "repo is - $j"
 	 local projectName=$(echo "$j" | rev | cut -d'/' -f 1 | rev)
@@ -784,6 +779,10 @@ function performGreenDeploymentOfOtherServices {
 		
 	fi
 	done
+	#Updating the current chart version to release-train
+	local helmversion=$(grep  'otherservices-release:' releasetrain.yml | awk '{ print $2}')
+	echo "variableName is ${helmversion}"
+	sed -i "s/${helmversion}/otherservices-${chartVersion}/" "releasetrain.yml"
 }
 
 function performGreenDeploymentOfConfigServer() {
@@ -803,7 +802,11 @@ function performGreenDeploymentOfConfigServer() {
 	if [[ "${serviceDeployed}" == "true" ]]; then
 		"${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" delete service "${appName}" || result=""
 	fi
-	helm install  --set configserver.image.name="${DOCKER_REGISTRY_ORGANIZATION}/${appName}:${version}" --set configserver.version="${version}"  --namespace  "${PAAS_NAMESPACE}" ./config-server
+	helm install  --set configserver.image.name="${DOCKER_REGISTRY_ORGANIZATION}/${appName}:${version}" --set configserver.version="${version}" --name config-server-${chartVersion}  --namespace  "${PAAS_NAMESPACE}" ./config-server
+	local helmversion=$(grep  'config-server-release:' releasetrain.yml | awk '{ print $2}')
+	echo "variableName is ${helmversion}"
+	sed -i "s/${helmversion}/config-server-${chartVersion}/" "releasetrain.yml"
+
 	#waitForAppToStart "${appName}"
 	git config --global user.email "asok_jp@yahoo.com"
 	git config --global user.name "asokjp"
@@ -950,8 +953,6 @@ function switchAllUsers() {
 		echo "true"
 		local pipelineversion=$(grep  "${projectName}:" releasetrain.yml | awk '{ print $2}')
 		echo "version of ${projectName} is ${pipelineversion}"
-		#local releaseVersion="$(getReleaseVersionFromPipelineVersion "${version}" )"
-		#echo "deployment version of ${projectName} is ${releaseVersion}"
 		local fileNameForProject="${fileName}-${projectName}.yaml"
 		cp ${fileName}.yaml ${fileNameForProject}
 		substituteVariables "version" "${pipelineversion}" "${fileNameForProject}"
@@ -968,6 +969,38 @@ function switchAllUsers() {
 		
 	fi
 	done
+	deleteBlueInstances
+}
+
+function getBlueInstanceRelease() {
+	local currentReleaseVersion="${1}"
+	local releaseGroup="${2}"
+	helm ls  --deployed -d | grep -v "${currentReleaseVersion}" | grep "${releaseGroup}" | tail -n 1 | awk '{print $1}' || echo ""
+}
+
+function deleteBlueInstances() {
+	# first delete config-server
+	local configserverRelease=$(grep 'config-server-release:' releasetrain.yml | awk '{ print $2}')
+	echo "configserverRelease is ${configserverRelease}"
+	local previousConfigServerRelease="$(getBlueInstanceRelease "${configserverRelease}" "config-server" )"
+	echo "previousConfigServerRelease is - ${previousConfigServerRelease}"
+	if [[ "${previousConfigServerRelease}" != "" ]]; then
+		echo "Deleting config-server from blue instance"
+		helm delete ${previousConfigServerRelease}
+	else
+		echo "Will not delete the blue instance for config-server cause it's not there"
+		return 1
+	fi
+	# Now delete other services
+	local otherserviceRelease=$(grep 'otherservices-release:' releasetrain.yml | awk '{ print $2}')
+	echo "otherserviceRelease is ${otherserviceRelease}"
+	if [[ "${otherserviceRelease}" != "" ]]; then
+		echo "Deleting  from blue instance"
+		helm delete ${otherserviceRelease}
+	else
+		echo "Will not delete the blue instance cause it's not there"
+		return 1
+	fi
 }
 
 function deleteBlueInstance() {

@@ -843,6 +843,17 @@ if(projectName.equalsIgnoreCase("prod-env-deploy-pipeline")) {
 		${WORKSPACE}/.git/tools/common/src/main/bash/prod_complete.sh
 		''')
 		}
+		publishers {
+			
+			git {
+				forcePush(true)
+				pushOnlyIfSuccess()
+				tag('origin', "prod/\${PIPELINE_VERSION}") {
+					create()
+					update()
+				}
+			}
+		}
 	}
 }
 }	
