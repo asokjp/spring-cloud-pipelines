@@ -804,7 +804,7 @@ function performGreenDeploymentOfConfigServer() {
 	if [[ "${serviceDeployed}" == "true" ]]; then
 		"${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" delete service "${appName}" || result=""
 	fi
-	local releaseNote= echo "$(helm install  --set configserver.image.name="${DOCKER_REGISTRY_ORGANIZATION}/${appName}:${version}" --set configserver.version="${version}"  --namespace  "${PAAS_NAMESPACE}" ./config-server)"
+	local releaseNote= echo("$(helm install  --set configserver.image.name="${DOCKER_REGISTRY_ORGANIZATION}/${appName}:${version}" --set configserver.version="${version}"  --namespace  "${PAAS_NAMESPACE}" ./config-server)")
 	echo "release note is  - ${releaseNote}"
 	local helmversion=$(grep  'config-server-release:' releasetrain.yml | awk '{ print $2}')
 	echo "variableName is ${helmversion}"
