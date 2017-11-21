@@ -756,7 +756,7 @@ function performGreenDeploymentOfOtherServices {
 	echo "Chart Version is - ${chartVersion}"
 	modifyChartVersion "${chartVersion}" "otherservices/Chart.yaml"
 	echo "helmoptions are - ${helmoptions}"
-	helm install ${helmoptions} --name "otherservices-${chartVersion}" --namespace  "${PAAS_NAMESPACE}" ./otherservices
+	local releaseNote=echo $(helm install ${helmoptions} --namespace  "${PAAS_NAMESPACE}" ./otherservices)
 	# now tagging each project to production
 	for j in "${ADDR[@]}"; do
 	 echo "repo is - $j"
@@ -782,7 +782,9 @@ function performGreenDeploymentOfOtherServices {
 	#Updating the current chart version to release-train
 	local helmversion=$(grep  'otherservices-release:' releasetrain.yml | awk '{ print $2}')
 	echo "variableName is ${helmversion}"
-	sed -i "s/${helmversion}/otherservices-${chartVersion}/" "releasetrain.yml"
+	local releaseName=echo ${releaseNote}| grep NAME: | awk '{ print $2}'
+	echo "releasename for otherservices is - ${releaseName}"
+	sed -i "s/${helmversion}/${releaseName}/" "releasetrain.yml"
 }
 
 function performGreenDeploymentOfConfigServer() {
@@ -802,10 +804,12 @@ function performGreenDeploymentOfConfigServer() {
 	if [[ "${serviceDeployed}" == "true" ]]; then
 		"${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" delete service "${appName}" || result=""
 	fi
-	helm install  --set configserver.image.name="${DOCKER_REGISTRY_ORGANIZATION}/${appName}:${version}" --set configserver.version="${version}" --name "config-server-${chartVersion}"  --namespace  "${PAAS_NAMESPACE}" ./config-server
+	local releaseNote=echo $(helm install  --set configserver.image.name="${DOCKER_REGISTRY_ORGANIZATION}/${appName}:${version}" --set configserver.version="${version}"  --namespace  "${PAAS_NAMESPACE}" ./config-server)
 	local helmversion=$(grep  'config-server-release:' releasetrain.yml | awk '{ print $2}')
 	echo "variableName is ${helmversion}"
-	sed -i "s/${helmversion}/config-server-${chartVersion}/" "releasetrain.yml"
+	local releaseName=echo ${releaseNote}| grep NAME: | awk '{ print $2}'
+	echo "releasename for config-server is - ${releaseName}"
+	sed -i "s/${helmversion}/${releaseName}/" "releasetrain.yml"
 
 	#waitForAppToStart "${appName}"
 	git config --global user.email "asok_jp@yahoo.com"
