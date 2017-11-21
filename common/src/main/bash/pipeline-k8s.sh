@@ -782,7 +782,7 @@ function performGreenDeploymentOfOtherServices {
 	#Updating the current chart version to release-train
 	local helmversion=$(grep  'otherservices-release:' releasetrain.yml | awk '{ print $2}')
 	echo "variableName is ${helmversion}"
-	local releaseName=echo ${releaseNote}| grep NAME: | awk '{ print $2}'
+	local releaseName= "${releaseNote}"| grep 'NAME:' | awk '{ print $2}'
 	echo "releasename for otherservices is - ${releaseName}"
 	sed -i "s/${helmversion}/${releaseName}/" "releasetrain.yml"
 }
@@ -807,7 +807,7 @@ function performGreenDeploymentOfConfigServer() {
 	local releaseNote=echo $(helm install  --set configserver.image.name="${DOCKER_REGISTRY_ORGANIZATION}/${appName}:${version}" --set configserver.version="${version}"  --namespace  "${PAAS_NAMESPACE}" ./config-server)
 	local helmversion=$(grep  'config-server-release:' releasetrain.yml | awk '{ print $2}')
 	echo "variableName is ${helmversion}"
-	local releaseName=echo ${releaseNote}| grep NAME: | awk '{ print $2}'
+	local releaseName=${"releaseNote"}| grep 'NAME:' | awk '{ print $2}'
 	echo "releasename for config-server is - ${releaseName}"
 	sed -i "s/${helmversion}/${releaseName}/" "releasetrain.yml"
 
