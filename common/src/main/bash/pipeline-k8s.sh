@@ -806,6 +806,7 @@ function performGreenDeploymentOfConfigServer() {
 	fi
 	# converting to helm accetable name format for release name. ie replacing '_' with '-'
 	local releaseNo="${chartVersion}" | tr '_' '-'
+	echo "releaseNo is ${releaseNo}"
 	local releaseName="config-server-${releaseNo}"
 	echo "release name for config-server is ${releaseName}"
 	helm install -n "${releaseName}" --set configserver.image.name="${DOCKER_REGISTRY_ORGANIZATION}/${appName}:${version}" --set configserver.version="${version}"  --namespace  "${PAAS_NAMESPACE}" ./config-server
