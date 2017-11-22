@@ -741,7 +741,7 @@ if(projectName.equalsIgnoreCase("prod-env-deploy-pipeline")) {
 		rm -rf .git/tools && git clone -b ${toolsBranch} --single-branch ${toolsRepo} .git/tools 
 		""")
 			shell('''#!/bin/bash
-		${WORKSPACE}/.git/tools/common/src/main/bash/prod_internal_switch.sh
+		chmod +x ${WORKSPACE}/.git/tools/common/src/main/bash/prod_internal_switch.sh && ${WORKSPACE}/.git/tools/common/src/main/bash/prod_internal_switch.sh
 		''')
 		}
 		publishers {
