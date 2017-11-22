@@ -718,7 +718,9 @@ function performGreenDeployment() {
 	# deploy app
 	performGreenDeploymentOfConfigServer
 	performGreenDeploymentOfOtherServices
-	#performGreenDeploymentOfTestedApplication "${appName}"
+	#add the changes to git staging area for pushing to remote repository
+	git add releasetrain.yml
+	git commit -m "adding new version"
 }
 
 function performGreenDeploymentOfOtherServices {
@@ -997,7 +999,6 @@ function deleteBlueInstances() {
 		helm delete ${previousConfigServerRelease}
 	else
 		echo "Will not delete the blue instance for config-server cause it's not there"
-		return 1
 	fi
 	# Now delete other services
 	local otherserviceRelease=$(grep 'otherservices-release:' releasetrain.yml | awk '{ print $2}')
@@ -1007,7 +1008,6 @@ function deleteBlueInstances() {
 		helm delete ${otherserviceRelease}
 	else
 		echo "Will not delete the blue instance cause it's not there"
-		return 1
 	fi
 }
 

@@ -11,4 +11,4 @@ export ENVIRONMENT=PROD
  echo "No pipeline.sh found"
 
 #deleteBlueInstance
-switchInternalUsers
+switchAllUsers
