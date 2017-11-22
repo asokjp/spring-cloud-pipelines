@@ -898,6 +898,78 @@ function escapeValueForDns() {
 }
 
 function rollbackToPreviousVersion() {
+	# First rollback to config-server release train
+	#Get latest deleted version for config server
+	local latestDeletedConfigServerRelease="$(getDeletedGreenInstance "config-server" )"
+	
+	echo "latestDeletedConfigServerRelease is - ${latestDeletedConfigServerRelease}"
+	if [[ "${latestDeletedConfigServerRelease}" != "" ]]; then
+		#First rollback
+		echo "Rolling back config server release"
+		helm rollback ${latestDeletedConfigServerRelease} 1
+		# delete current version
+		local configserverRelease=$(grep 'config-server-release:' releasetrain.yml | awk '{ print $2}')
+		echo "current release of config sever is - ${configserverRelease}"
+		if [[ "${configserverRelease}" != "" ]]; then
+			helm delete ${configserverRelease}
+		fi
+	else
+		echo "Nothing to roll back for config-server"
+	fi
+	# Next roll back  of otherservices
+	local latestDeletedOtherServiceRelease="$(getDeletedGreenInstance "otherservices" )"
+	
+	echo "latestDeletedOtherServiceRelease is - ${latestDeletedOtherServiceRelease}"
+	if [[ "${latestDeletedOtherServiceRelease}" != "" ]]; then
+		#First rollback
+		echo "Rolling back Other service release"
+		helm rollback ${latestDeletedOtherServiceRelease} 1
+		
+		# rout the request to rollbacked release.
+		#first need to get the respecte version of services from repository
+		git config --global user.email "asok_jp@yahoo.com"
+		git config --global user.name "asokjp"
+		git clone https://asokjp:Lalithamma1@github.com/asokjp/prod-env-deploy.git --branch prod/asd --single-branch
+		cd prod-env-deploy
+		downloadIstio
+		local fileName="route-rule-all-users"
+		local repos="${REPOS}"
+		echo "repos are - ${repos}"
+		IFS=',' read -ra ADDR <<< "$repos"
+		for i in "${ADDR[@]}"; do
+			echo "repo is - $i"
+			local projectName=$(echo "$i" | rev | cut -d'/' -f 1 | rev)
+			echo "projectName is - ${projectName}"
+			if [[ ( "${projectName}" != "config-server1" ) && ( "${projectName}" != "prod-env-deploy" ) ]]; then
+				echo "true"
+				local pipelineversion=$(grep  "${projectName}:" releasetrain.yml | awk '{ print $2}')
+				echo "version of ${projectName} is ${pipelineversion}"
+				local fileNameForProject="${fileName}-${projectName}.yaml"
+				cp ${fileName}.yaml ${fileNameForProject}
+				substituteVariables "version" "${pipelineversion}" "${fileNameForProject}"
+				substituteVariables "appName" "${projectName}" "${fileNameForProject}"
+				routeRuleDeployed="$(objectDeployed "RouteRule" "${projectName}-default")"
+				echo "Routing rule ${projectName}-default already deployed? [${routeRuleDeployed}]"
+				if [[ "${routeRuleDeployed}" == "true" ]]; then
+					istioctl replace -f ${fileNameForProject} --namespace="${PAAS_NAMESPACE}"
+				else
+					istioctl create -f ${fileNameForProject} --namespace="${PAAS_NAMESPACE}"
+				fi
+			else
+				echo "false"
+			
+			fi
+		done
+		# delete current version
+		local otherserviceRelease=$(grep 'otherservices-release:' releasetrain.yml | awk '{ print $2}')
+		echo "current release of other services is - ${otherserviceRelease}"
+		if [[ "${otherserviceRelease}" != "" ]]; then
+			helm delete ${otherserviceRelease}
+		fi
+	else
+		echo "Nothing to roll back for otherservices release train"
+	fi
+	############################################
 	local appName
 	appName="$(retrieveAppName)"
 	# Log in to CF to start deployment
@@ -980,6 +1052,11 @@ function switchAllUsers() {
 	fi
 	done
 	deleteBlueInstances
+}
+
+function getDeletedGreenInstance() {
+	local releaseGroup="${1}"
+	helm ls  --deleted -d | grep "${releaseGroup}" | tail -n 1 | awk '{print $1}' || echo ""
 }
 
 function getBlueInstanceRelease() {
