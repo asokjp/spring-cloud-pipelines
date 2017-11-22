@@ -63,7 +63,7 @@ function downloadHelm() {
 function downloadIstio() {
 		echo "installing istio.."
 		curl -L https://git.io/getLatestIstio | sh -
-		export PATH="$PATH:/var/jenkins_home/workspace/prod-env-complete/istio-0.2.12/bin"
+		export PATH="$PATH:$PWD/istio-0.2.12/bin"
 		echo "PATH is ${PATH}"
 }
 
