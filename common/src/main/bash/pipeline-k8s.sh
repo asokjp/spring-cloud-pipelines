@@ -756,9 +756,9 @@ function performGreenDeploymentOfOtherServices {
 	echo "Chart Version is - ${chartVersion}"
 	modifyChartVersion "${chartVersion}" "otherservices/Chart.yaml"
 	echo "helmoptions are - ${helmoptions}"
-	local releaseNo="${chartVersion}" | tr '_' '-'
-	local releaseName="otherservices-${releaseNo}"
-	echo "release name for config-server is ${releaseName}"
+	#local releaseNo="${chartVersion}" | tr '_' '-'
+	local releaseName="otherservices-${chartVersion}"
+	echo "release name for config-server is ${chartVersion}"
 	helm install -n ${releaseName} ${helmoptions} --namespace  "${PAAS_NAMESPACE}" ./otherservices
 	# now tagging each project to production
 	for j in "${ADDR[@]}"; do
@@ -805,9 +805,9 @@ function performGreenDeploymentOfConfigServer() {
 		"${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" delete service "${appName}" || result=""
 	fi
 	# converting to helm accetable name format for release name. ie replacing '_' with '-'
-	local releaseNo="${chartVersion}" | tr '_' '-'
-	echo "releaseNo is ${releaseNo}"
-	local releaseName="config-server-${releaseNo}"
+	#local releaseNo="${chartVersion}" | tr '_' '-'
+	#echo "releaseNo is ${releaseNo}"
+	local releaseName="config-server-${chartVersion}"
 	echo "release name for config-server is ${releaseName}"
 	helm install -n "${releaseName}" --set configserver.image.name="${DOCKER_REGISTRY_ORGANIZATION}/${appName}:${version}" --set configserver.version="${version}"  --namespace  "${PAAS_NAMESPACE}" ./config-server
 	# updating the release name to releasetrain.yaml file
@@ -837,7 +837,7 @@ function modifyChartVersion() {
 function getReleaseVersionFromPipelineVersion() {
 	local pipelineVersion="${1}"
 	arrIN=(${pipelineVersion//-/ })
-	echo "${arrIN[1]}"
+	echo "${arrIN[1]}" | tr '_' '-'
 }
 
 
