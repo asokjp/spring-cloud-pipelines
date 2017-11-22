@@ -1003,11 +1003,12 @@ function deleteBlueInstances() {
 	# Now delete other services
 	local otherserviceRelease=$(grep 'otherservices-release:' releasetrain.yml | awk '{ print $2}')
 	echo "otherserviceRelease is ${otherserviceRelease}"
-	if [[ "${otherserviceRelease}" != "" ]]; then
-		echo "Deleting  from blue instance"
-		helm delete ${otherserviceRelease}
+	local previousOtherserviceRelease="$(getBlueInstanceRelease "${otherserviceRelease}" "otherservices" )"
+	if [[ "${previousOtherserviceRelease}" != "" ]]; then
+		echo "Deleting  other service from blue instance"
+		helm delete ${previousOtherserviceRelease}
 	else
-		echo "Will not delete the blue instance cause it's not there"
+		echo "Will not delete the blue instance for other services cause it's not there"
 	fi
 }
 
