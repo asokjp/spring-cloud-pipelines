@@ -326,7 +326,7 @@ function setVersionForReleaseTrain() {
 	git clone https://asokjp:Lalithamma1@github.com/asokjp/prod-env-deploy.git
 	cd prod-env-deploy
 	git init
-	local currentversion=$(grep  'config-server:' releasetrain.yml | awk '{ print $2}')
+	local currentversion=$(grep  "${projectName}:" releasetrain.yml | awk '{ print $2}')
 	echo "variableName is ${currentversion}"
 	sed -i "s/${currentversion}/${version}/" "releasetrain.yml"
 	git add *
