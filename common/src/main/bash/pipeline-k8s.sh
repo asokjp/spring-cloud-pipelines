@@ -753,6 +753,13 @@ function performGreenDeploymentOfOtherServices {
 		
 	fi
 	done
+	#delete ingress
+	local ingressDeployed
+		ingressDeployed="$(objectDeployed "ingress" gateway )"
+		echo "ingress gateway already deployed? [${ingressDeployed}]"
+		if [[ "${ingressDeployed}" == "true" ]]; then
+			"${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" delete ingress gateway || result=""
+		fi
 	downloadHelm
 	local chartVersion="$(getReleaseVersionFromPipelineVersion "${PIPELINE_VERSION}" )"
 	echo "Chart Version is - ${chartVersion}"
