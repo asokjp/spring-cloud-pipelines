@@ -935,11 +935,11 @@ function rollbackToPreviousVersion() {
 		# rout the request to rollbacked release.
 		#first need to get the respecte version of services from repository for setting the routing rule.
 		arrIN=(${latestDeletedOtherServiceRelease//-/ })
-		lastProdDeployVersion="1.0.0.M1-${arrIN[-2]}_${arrIN[-1]}-VERSION"
+		local lastProdDeployVersion="1.0.0.M1-${arrIN[-2]}_${arrIN[-1]}-VERSION"
 		"lastProdDeployVersion is ${lastProdDeployVersion}"
 		git config --global user.email "asok_jp@yahoo.com"
 		git config --global user.name "asokjp"
-		git clone https://asokjp:Lalithamma1@github.com/asokjp/prod-env-deploy.git --branch prod/${lastProdDeployVersion} --single-branch
+		git clone https://asokjp:Lalithamma1@github.com/asokjp/prod-env-deploy.git --branch "prod/${lastProdDeployVersion}" --single-branch
 		cd prod-env-deploy
 		downloadIstio
 		local fileName="route-rule-all-users"
