@@ -935,8 +935,8 @@ function rollbackToPreviousVersion() {
 		# rout the request to rollbacked release.
 		#first need to get the respecte version of services from repository for setting the routing rule.
 		arrIN=(${latestDeletedOtherServiceRelease//-/ })
-		local lastProdDeployVersion="1.0.0.M1-"${arrIN[-2]}"_"${arrIN[-1]}"-VERSION"
-		"lastProdDeployVersion is - ${lastProdDeployVersion}"
+		local lastProdDeployVersion="1.0.0.M1-${arrIN[-2]}_${arrIN[-1]}-VERSION"
+		echo "lastProdDeployVersion is - ${lastProdDeployVersion}"
 		echo "test"
 		git config --global user.email "asok_jp@yahoo.com"
 		echo "test1"
