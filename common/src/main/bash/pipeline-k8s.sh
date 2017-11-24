@@ -937,9 +937,13 @@ function rollbackToPreviousVersion() {
 		arrIN=(${latestDeletedOtherServiceRelease//-/ })
 		local lastProdDeployVersion="1.0.0.M1-${arrIN[-2]}_${arrIN[-1]}-VERSION"
 		"lastProdDeployVersion is ${lastProdDeployVersion}"
+		echo "test"
 		git config --global user.email "asok_jp@yahoo.com"
+		echo "test1"
 		git config --global user.name "asokjp"
-		git clone https://asokjp:Lalithamma1@github.com/asokjp/prod-env-deploy.git --branch "prod/${lastProdDeployVersion}" --single-branch
+		echo "test2"
+		git clone https://asokjp:Lalithamma1@github.com/asokjp/prod-env-deploy.git --branch prod/"${lastProdDeployVersion}" --single-branch
+		echo "test3"
 		cd prod-env-deploy
 		downloadIstio
 		local fileName="route-rule-all-users"
