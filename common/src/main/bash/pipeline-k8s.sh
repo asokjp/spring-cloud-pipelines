@@ -725,6 +725,7 @@ function performGreenDeployment() {
 
 function performGreenDeploymentOfOtherServices {
 	local helmoptions=""
+	ocal serviceFile="service.yml"
 	git config --global user.email "asok_jp@yahoo.com"
 	git config --global user.name "asokjp"
 	local repos="${REPOS}"
@@ -744,8 +745,15 @@ function performGreenDeploymentOfOtherServices {
 		local serviceDeployed
 		serviceDeployed="$(objectDeployed "service" "${projectName}")"
 		echo "Service already deployed? [${serviceDeployed}]"
-		if [[ "${serviceDeployed}" == "true" ]]; then
-			"${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" delete service "${projectName}" || result=""
+		if [[ "${serviceDeployed}" == "false" ]]; then
+			git config --global user.email "asok_jp@yahoo.com"
+			git config --global user.name "asokjp"
+			git clone https://asokjp:Lalithamma1@github.com/asokjp/"${projectName}"  --branch dev/"${version}"
+			cd "${projectName}"
+			substituteVariables "appName" "${appName}" "${serviceFile}"		
+			deployApp "${serviceFile}"
+			cd ..
+			rm -rf "${projectName}"
 		fi
 		helmoptions="${helmoptions} --set ${projectName}.image.name=${DOCKER_REGISTRY_ORGANIZATION}/${projectName}:${version} --set ${projectName}.version=${version} "
 	else
@@ -755,10 +763,11 @@ function performGreenDeploymentOfOtherServices {
 	done
 	#delete ingress
 	local ingressDeployed
-		ingressDeployed="$(objectDeployed "ingress" gateway )"
+	local ingressFile="gatewayingress.yml"
+	ingressDeployed="$(objectDeployed "ingress" gateway )"
 		echo "ingress gateway already deployed? [${ingressDeployed}]"
-		if [[ "${ingressDeployed}" == "true" ]]; then
-			"${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" delete ingress gateway || result=""
+		if [[ "${ingressDeployed}" == "false" ]]; then
+			deployApp "${ingressFile}"
 		fi
 	downloadHelm
 	local chartVersion="$(getReleaseVersionFromPipelineVersion "${PIPELINE_VERSION}" )"
@@ -801,6 +810,7 @@ function performGreenDeploymentOfConfigServer() {
 	local appName="config-server"
 	local version=$(grep  'config-server:' releasetrain.yml | awk '{ print $2}')
 	echo "version of config-server is ${version}"
+	local serviceFile="service.yml"
 	#local releaseVersion="$(getReleaseVersionFromPipelineVersion "${version}" )"
 	#echo "deployment version of config-server is ${releaseVersion}"
 	downloadHelm
@@ -810,8 +820,16 @@ function performGreenDeploymentOfConfigServer() {
 	local serviceDeployed
 	serviceDeployed="$(objectDeployed "service" "${appName}")"
 	echo "Service already deployed? [${serviceDeployed}]"
-	if [[ "${serviceDeployed}" == "true" ]]; then
-		"${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" delete service "${appName}" || result=""
+	if [[ "${serviceDeployed}" == "false" ]]; then
+		
+		git config --global user.email "asok_jp@yahoo.com"
+		git config --global user.name "asokjp"
+		git clone https://asokjp:Lalithamma1@github.com/asokjp/config-server1  --branch dev/"${version}"
+		cd config-server1
+		substituteVariables "appName" "${appName}" "${serviceFile}"		
+		deployApp "${serviceFile}"
+		cd ..
+		rm -rf config-server1
 	fi
 	# converting to helm accetable name format for release name. ie replacing '_' with '-'
 	#local releaseNo="${chartVersion}" | tr '_' '-'
@@ -937,13 +955,9 @@ function rollbackToPreviousVersion() {
 		arrIN=(${latestDeletedOtherServiceRelease//-/ })
 		local lastProdDeployVersion="1.0.0.M1-${arrIN[-2]}_${arrIN[-1]}-VERSION"
 		echo "lastProdDeployVersion is - ${lastProdDeployVersion}"
-		echo "test"
 		git config --global user.email "asok_jp@yahoo.com"
-		echo "test1"
 		git config --global user.name "asokjp"
-		echo "test2"
 		git clone https://asokjp:Lalithamma1@github.com/asokjp/prod-env-deploy.git --branch prod/"${lastProdDeployVersion}" --single-branch
-		echo "test3"
 		cd prod-env-deploy
 		downloadIstio
 		local fileName="route-rule-all-users"
