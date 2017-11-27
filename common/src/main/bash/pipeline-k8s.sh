@@ -725,7 +725,7 @@ function performGreenDeployment() {
 
 function performGreenDeploymentOfOtherServices {
 	local helmoptions=""
-	ocal serviceFile="service.yml"
+	local serviceFile="service.yml"
 	git config --global user.email "asok_jp@yahoo.com"
 	git config --global user.name "asokjp"
 	local repos="${REPOS}"
