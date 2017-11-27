@@ -750,7 +750,7 @@ function performGreenDeploymentOfOtherServices {
 			git config --global user.name "asokjp"
 			git clone https://asokjp:Lalithamma1@github.com/asokjp/"${projectName}"  --branch dev/"${version}"
 			cd "${projectName}"
-			substituteVariables "appName" "${appName}" "${serviceFile}"		
+			substituteVariables "appName" "${projectName}" "${serviceFile}"		
 			deployApp "${serviceFile}"
 			cd ..
 			rm -rf "${projectName}"
