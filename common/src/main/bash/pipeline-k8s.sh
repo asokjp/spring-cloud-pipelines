@@ -596,8 +596,8 @@ function prepareForE2eTests() {
 
 function applicationHost() {
 	local appName="${1}"
+	local apiUrlProp="PAAS_${ENVIRONMENT}_API_URL"
 	if [[ "${KUBERNETES_MINIKUBE}" == "true" ]]; then
-		local apiUrlProp="PAAS_${ENVIRONMENT}_API_URL"
 		# host:port -> host
 		echo "${!apiUrlProp}" | awk -F: '{print $1}'
 	else
