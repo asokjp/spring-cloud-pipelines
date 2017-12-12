@@ -601,7 +601,7 @@ function applicationHost() {
 		# host:port -> host
 		echo "${!apiUrlProp}" | awk -F: '{print $1}'
 	else
-		echo "${appName}.${PAAS_NAMESPACE}"
+		echo "${!apiUrlProp}" | awk -F: '{print $1}'
 	fi
 }
 
@@ -611,7 +611,7 @@ function portFromKubernetes() {
 	{ if [[ "${KUBERNETES_MINIKUBE}" == "true" ]]; then
 		jsonPath="{.spec.ports[0].nodePort}"
 	else
-		jsonPath="{.spec.ports[0].port}"
+		jsonPath="{.spec.ports[0].nodePort}"
 	fi
 	}
 	# '8080' -> 8080
