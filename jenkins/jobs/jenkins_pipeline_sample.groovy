@@ -65,7 +65,7 @@ String repos = binding.variables["REPOS"] ?:
 		}
 		steps {
 			shell('''#!/bin/bash
-		chmod +x ${WORKSPACE}/.git/tools/common/src/main/bash/prod_internal_switch.sh && ${WORKSPACE}/.git/tools/common/src/main/bash/prod_internal_switch.sh
+		chmod +x ${WORKSPACE}/.git/tools/common/src/main/bash/create_gce_cluster.sh && ${WORKSPACE}/.git/tools/common/src/main/bash/create_gce_cluster.sh
 		''')
 		}
 		publishers {
