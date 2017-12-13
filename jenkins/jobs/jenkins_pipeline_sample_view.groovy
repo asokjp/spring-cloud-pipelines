@@ -26,7 +26,8 @@ dsl.deliveryPipelineView("Infra-pipeline") {
 		configure {
 			(it / 'showTestResults').setValue(true)
 			(it / 'pagingEnabled').setValue(true)
-		}		 
+		}	
+}
 		 
 List<String> parsedRepos = repos.split(',')
 parsedRepos.each {
@@ -97,5 +98,4 @@ else {
 			(it / 'pagingEnabled').setValue(true)
 		}
 	}
-}
 }
