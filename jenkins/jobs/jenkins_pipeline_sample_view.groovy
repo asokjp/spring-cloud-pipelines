@@ -97,5 +97,7 @@ else {
 			(it / 'showTestResults').setValue(true)
 			(it / 'pagingEnabled').setValue(true)
 		}
+	
 	}
+}
 }
