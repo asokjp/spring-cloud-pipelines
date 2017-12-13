@@ -62,13 +62,35 @@ String repos = binding.variables["REPOS"] ?:
 				failBuild()
 				writeDescription('Build failed due to timeout after {0} minutes of inactivity')
 			}
+			credentialsBinding {
+				if (repoWithBinariesCredentials) usernamePassword('M2_SETTINGS_REPO_USERNAME', 'M2_SETTINGS_REPO_PASSWORD', repoWithBinariesCredentials)
+				if (dockerCredentials) usernamePassword('DOCKER_USERNAME', 'DOCKER_PASSWORD', dockerCredentials)
+			}
+		}
+		jdk(jdkVersion)
+		scm {
+			git {
+				remote {
+					name('origin')
+					url(fullGitRepo)
+					branch(branchName)
+					credentials(gitUseSshKey ? gitSshCredentials : gitCredentials)
+				}
+				extensions {
+					wipeOutWorkspace()
+				}
+			}
+		}
+		configure { def project ->
+			// Adding user email and name here instead of global settings
+			project / 'scm' / 'extensions' << 'hudson.plugins.git.extensions.impl.UserIdentity' {
+				'email'(gitEmail)
+				'name'(gitName)
+			}
 		}
 		steps {
-			shell("""#!/bin/bash
-		rm -rf .git/tools && git clone -b ${toolsBranch} --single-branch ${toolsRepo} .git/tools 
-		""")
 			shell('''#!/bin/bash
-		chmod +x ${WORKSPACE}/.git/tools/common/src/main/bash/create_gce_cluster.sh && ${WORKSPACE}/.git/tools/common/src/main/bash/create_gce_cluster.sh
+		chmod +x ${WORKSPACE}/.git/tools/common/src/main/bash/prod_internal_switch.sh && ${WORKSPACE}/.git/tools/common/src/main/bash/prod_internal_switch.sh
 		''')
 		}
 		publishers {
@@ -78,7 +100,7 @@ String repos = binding.variables["REPOS"] ?:
 				}
 			}
 		}
-	}		 
+	}
 
 dsl.job("install-istio") {
 	deliveryPipelineConfiguration('Infra', 'install istio')
