@@ -6,6 +6,28 @@ DslFactory dsl = this
 String repos = binding.variables['REPOS'] ?:
 		['https://github.com/asokjp/claimant-service',
 		 'https://github.com/asokjp/config-server1','https://github.com/asokjp/hello-world','https://github.com/asokjp/prod-env-deploy'].join(',')
+		 
+dsl.deliveryPipelineView("Infra-pipeline") {
+		allowPipelineStart()
+		pipelineInstances(5)
+		showAggregatedPipeline(false)
+		columns(1)
+		updateInterval(5)
+		enableManualTriggers()
+		showAvatars()
+		showChangeLog()
+		pipelines {
+			component("Infra", "install-kubernetes-cluster")
+		}
+		allowRebuild()
+		showDescription()
+		showPromotions()
+		showTotalBuildTime()
+		configure {
+			(it / 'showTestResults').setValue(true)
+			(it / 'pagingEnabled').setValue(true)
+		}		 
+		 
 List<String> parsedRepos = repos.split(',')
 parsedRepos.each {
 	String gitRepoName = it.split('/').last() - '.git'

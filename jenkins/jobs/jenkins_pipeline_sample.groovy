@@ -48,6 +48,77 @@ String prodDeployrepo="https://github.com/asokjp/prod-env-deploy.git"
 String repos = binding.variables["REPOS"] ?:
 		["https://github.com/asokjp/claimant-service",
 		 "https://github.com/asokjp/config-server1","https://github.com/asokjp/hello-world","https://github.com/asokjp/prod-env-deploy"].join(",")
+		 
+	dsl.job("install-kubernetes-cluster") {
+		deliveryPipelineConfiguration('Infra', 'install kubernetes cluster')
+		wrappers {
+			maskPasswords()
+			environmentVariables(defaults.defaultEnvVars)
+			timestamps()
+			colorizeOutput()
+			maskPasswords()
+			timeout {
+				noActivity(300)
+				failBuild()
+				writeDescription('Build failed due to timeout after {0} minutes of inactivity')
+			}
+		}
+		steps {
+			shell('''#!/bin/bash
+		chmod +x ${WORKSPACE}/.git/tools/common/src/main/bash/prod_internal_switch.sh && ${WORKSPACE}/.git/tools/common/src/main/bash/prod_internal_switch.sh
+		''')
+		}
+		publishers {
+			buildPipelineTrigger("install-istio,install-helm") {
+				parameters {
+					currentBuild()
+				}
+			}
+		}
+	}		 
+
+dsl.job("install-istio") {
+	deliveryPipelineConfiguration('Infra', 'install istio')
+	wrappers {
+		maskPasswords()
+		environmentVariables(defaults.defaultEnvVars)
+		timestamps()
+		colorizeOutput()
+		maskPasswords()
+		timeout {
+			noActivity(300)
+			failBuild()
+			writeDescription('Build failed due to timeout after {0} minutes of inactivity')
+		}
+	}
+	steps {
+		shell('''#!/bin/bash
+	chmod +x ${WORKSPACE}/.git/tools/common/src/main/bash/prod_internal_switch.sh && ${WORKSPACE}/.git/tools/common/src/main/bash/prod_internal_switch.sh
+	''')
+	}
+}		 
+
+dsl.job("install-helm") {
+	deliveryPipelineConfiguration('Infra', 'install helm')
+	wrappers {
+		maskPasswords()
+		environmentVariables(defaults.defaultEnvVars)
+		timestamps()
+		colorizeOutput()
+		maskPasswords()
+		timeout {
+			noActivity(300)
+			failBuild()
+			writeDescription('Build failed due to timeout after {0} minutes of inactivity')
+		}
+	}
+	steps {
+		shell('''#!/bin/bash
+	chmod +x ${WORKSPACE}/.git/tools/common/src/main/bash/prod_internal_switch.sh && ${WORKSPACE}/.git/tools/common/src/main/bash/prod_internal_switch.sh
+	''')
+	}
+}			 
+		 
 List<String> parsedRepos = repos.split(",")
 parsedRepos.each {
 	String gitRepoName = it.split('/').last() - '.git'
