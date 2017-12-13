@@ -64,6 +64,9 @@ String repos = binding.variables["REPOS"] ?:
 			}
 		}
 		steps {
+			shell("""#!/bin/bash
+		rm -rf .git/tools && git clone -b ${toolsBranch} --single-branch ${toolsRepo} .git/tools 
+		""")
 			shell('''#!/bin/bash
 		chmod +x ${WORKSPACE}/.git/tools/common/src/main/bash/create_gce_cluster.sh && ${WORKSPACE}/.git/tools/common/src/main/bash/create_gce_cluster.sh
 		''')
@@ -92,8 +95,11 @@ dsl.job("install-istio") {
 		}
 	}
 	steps {
+		shell("""#!/bin/bash
+		rm -rf .git/tools && git clone -b ${toolsBranch} --single-branch ${toolsRepo} .git/tools 
+		""")
 		shell('''#!/bin/bash
-	chmod +x ${WORKSPACE}/.git/tools/common/src/main/bash/prod_internal_switch.sh && ${WORKSPACE}/.git/tools/common/src/main/bash/prod_internal_switch.sh
+	chmod +x ${WORKSPACE}/.git/tools/common/src/main/bash/prod_internal_switch.sh && ${WORKSPACE}/.git/tools/common/src/main/bash/install-istio.sh
 	''')
 	}
 }		 
@@ -113,8 +119,11 @@ dsl.job("install-helm") {
 		}
 	}
 	steps {
+		shell("""#!/bin/bash
+		rm -rf .git/tools && git clone -b ${toolsBranch} --single-branch ${toolsRepo} .git/tools 
+		""")
 		shell('''#!/bin/bash
-	chmod +x ${WORKSPACE}/.git/tools/common/src/main/bash/prod_internal_switch.sh && ${WORKSPACE}/.git/tools/common/src/main/bash/prod_internal_switch.sh
+	chmod +x ${WORKSPACE}/.git/tools/common/src/main/bash/prod_internal_switch.sh && ${WORKSPACE}/.git/tools/common/src/main/bash/install-helm.sh
 	''')
 	}
 }			 
