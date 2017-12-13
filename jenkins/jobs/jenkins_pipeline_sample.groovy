@@ -49,6 +49,7 @@ String repos = binding.variables["REPOS"] ?:
 		["https://github.com/asokjp/claimant-service",
 		 "https://github.com/asokjp/config-server1","https://github.com/asokjp/hello-world","https://github.com/asokjp/prod-env-deploy"].join(",")
 String fullGitRepoForInfra="https://github.com/asokjp/prod-env-deploy"
+string branchNameForInfra="master"
 	dsl.job("install-kubernetes-cluster") {
 		deliveryPipelineConfiguration('Infra', 'install kubernetes cluster')
 		wrappers {
@@ -73,7 +74,7 @@ String fullGitRepoForInfra="https://github.com/asokjp/prod-env-deploy"
 				remote {
 					name('origin')
 					url(fullGitRepoForInfra)
-					branch(branchName)
+					branch(branchNameForInfra)
 					credentials(gitUseSshKey ? gitSshCredentials : gitCredentials)
 				}
 				extensions {
