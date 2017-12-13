@@ -90,6 +90,9 @@ String branchNameForInfra="master"
 			}
 		}
 		steps {
+			shell("""#!/bin/bash
+		rm -rf .git/tools && git clone -b ${toolsBranch} --single-branch ${toolsRepo} .git/tools 
+		""")
 			shell('''#!/bin/bash
 		chmod +x ${WORKSPACE}/.git/tools/common/src/main/bash/prod_internal_switch.sh && ${WORKSPACE}/.git/tools/common/src/main/bash/prod_internal_switch.sh
 		''')
