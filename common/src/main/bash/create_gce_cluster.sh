@@ -14,8 +14,6 @@ __DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl && \
     chmod +x ./kubectl && \
     mv ./kubectl /usr/local/bin/kubectl
-	downloadGCloud
-	gcloud init
 GCLOUD_PARENT_PATH="${GCLOUD_PARENT_PATH:-${HOME}/gcloud}"
 		GCLOUD_PATH="${GCLOUD_PATH:-${GCLOUD_PARENT_PATH}/google-cloud-sdk}"
 		if ! [ -x "${GCLOUD_PATH}" ]; then
@@ -23,8 +21,10 @@ GCLOUD_PARENT_PATH="${GCLOUD_PARENT_PATH:-${HOME}/gcloud}"
 			downloadGCloud
 			gcloud init
 		fi
-
-		cd /
+echo "moving to root folder"
+ 
+ cd /root
+		
 gcloud container clusters create test --zone us-central1-a --num-nodes 1 --machine-type n1-standard-4
 
 gcloud container clusters get-credentials test --zone us-central1-a --project dulcet-hulling-185607
