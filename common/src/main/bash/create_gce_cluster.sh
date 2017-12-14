@@ -32,9 +32,9 @@ gcloud container clusters create test --zone us-central1-a --num-nodes 1 --machi
 gcloud container clusters get-credentials test --zone us-central1-a --project dulcet-hulling-185607
 
 mkdir -p build
-		createNamespace "sc-pipelines-test"
-		createNamespace "sc-pipelines-stage"
-		createNamespace "sc-pipelines-prod"
+		createNamespace1 "sc-pipelines-test"
+		createNamespace1 "sc-pipelines-stage"
+		createNamespace1 "sc-pipelines-prod"
 
 function downloadGCloud() {
  if [[ "${OSTYPE}" == linux* ]]; then
@@ -64,7 +64,7 @@ function setup-namespaces() {
 		createNamespace "sc-pipelines-prod"
 }
 
-function createNamespace() {
+function createNamespace1() {
 	local namespaceName="${1}"
 	local folder=""
 	if [ -d "tools" ]; then
