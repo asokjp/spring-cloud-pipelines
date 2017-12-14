@@ -27,6 +27,7 @@ echo "moving to root folder"
  cd /root
 echo "listing folder"
 ls		
+source ~/.bashrc
 gcloud container clusters create test --zone us-central1-a --num-nodes 1 --machine-type n1-standard-4
 
 gcloud container clusters get-credentials test --zone us-central1-a --project dulcet-hulling-185607
