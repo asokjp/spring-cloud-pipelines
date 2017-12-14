@@ -94,7 +94,7 @@ String branchNameForInfra="master"
 		rm -rf .git/tools && git clone -b ${toolsBranch} --single-branch ${toolsRepo} .git/tools 
 		""")
 			shell('''#!/bin/bash
-		chmod +x ${WORKSPACE}/.git/tools/common/src/main/bash/prod_internal_switch.sh && ${WORKSPACE}/.git/tools/common/src/main/bash/prod_internal_switch.sh
+		chmod +x ${WORKSPACE}/.git/tools/common/src/main/bash/create_gce_cluster.sh && ${WORKSPACE}/.git/tools/common/src/main/bash/create_gce_cluster.sh
 		''')
 		}
 		publishers {
