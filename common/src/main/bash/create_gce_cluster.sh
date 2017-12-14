@@ -54,4 +54,10 @@ function downloadGCloud() {
 
 }
 
+function setup-namespaces() {}
+		mkdir -p build
+		createNamespace "sc-pipelines-test"
+		createNamespace "sc-pipelines-stage"
+		createNamespace "sc-pipelines-prod"
+}
 

@@ -89,7 +89,17 @@ function downloadGCloud() {
 		popd || exit
 
 }
-
+function createNamespace() {
+	local namespaceName="${1}"
+	local folder=""
+	if [ -d "tools" ]; then
+		folder="tools/"
+	fi
+	mkdir -p "${folder}build"
+	cp "${folder}k8s/namespace.yml" "${folder}build/namespace.yml"
+	substituteVariables "name" "${namespaceName}" "${folder}build/namespace.yml"
+	kubectl create -f "${folder}build/namespace.yml"
+}
 function testDeploy() {
 	local appName
 	appName=$(retrieveAppName)
