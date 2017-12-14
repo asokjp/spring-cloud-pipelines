@@ -14,7 +14,8 @@ __DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl && \
     chmod +x ./kubectl && \
     mv ./kubectl /usr/local/bin/kubectl
-	
+	downloadGCloud
+	gcloud init
 GCLOUD_PARENT_PATH="${GCLOUD_PARENT_PATH:-${HOME}/gcloud}"
 		GCLOUD_PATH="${GCLOUD_PATH:-${GCLOUD_PARENT_PATH}/google-cloud-sdk}"
 		if ! [ -x "${GCLOUD_PATH}" ]; then
