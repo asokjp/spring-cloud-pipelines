@@ -96,7 +96,7 @@ function createNamespace() {
 		folder="tools/"
 	fi
 	mkdir -p "${folder}build"
-	cp "${folder}k8s/namespace.yml" "${folder}build/namespace.yml"
+	cp "namespace.yml" "${folder}build/namespace.yml"
 	substituteVariables "name" "${namespaceName}" "${folder}build/namespace.yml"
 	kubectl create -f "${folder}build/namespace.yml"
 }
