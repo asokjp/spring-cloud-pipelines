@@ -19,14 +19,13 @@ GCLOUD_PARENT_PATH="${GCLOUD_PARENT_PATH:-${HOME}/gcloud}"
 		if ! [ -x "${GCLOUD_PATH}" ]; then
 			echo "installing gcloud.."
 			downloadGCloud
-			gcloud init
 		fi
-echo "moving to base folder"
-cd /
-echo "moving to root folder"
- cd /root
-echo "listing folder"
-ls		
+#echo "moving to base folder"
+#cd /
+#echo "moving to root folder"
+#cd /root
+#echo "listing folder"
+#ls		
 source ~/.bashrc
 gcloud container clusters create test --zone us-central1-a --num-nodes 1 --machine-type n1-standard-4
 
