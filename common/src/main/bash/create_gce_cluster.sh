@@ -21,15 +21,16 @@ GCLOUD_PARENT_PATH="${GCLOUD_PARENT_PATH:-${HOME}/gcloud}"
 			downloadGCloud
 			gcloud init
 		fi
+echo "moving to base folder"
+cd /
 echo "moving to root folder"
-
  cd /root
-echo "${ls}"		
+echo "listing folder"
+ls		
 gcloud container clusters create test --zone us-central1-a --num-nodes 1 --machine-type n1-standard-4
 
 gcloud container clusters get-credentials test --zone us-central1-a --project dulcet-hulling-185607
 
-echo kubectl get nodes
 
 
 function downloadGCloud() {
