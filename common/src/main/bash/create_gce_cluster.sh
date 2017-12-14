@@ -64,3 +64,15 @@ function setup-namespaces() {
 		createNamespace "sc-pipelines-prod"
 }
 
+function createNamespace() {
+	local namespaceName="${1}"
+	local folder=""
+	if [ -d "tools" ]; then
+		folder="tools/"
+	fi
+	mkdir -p "${folder}build"
+	cp "namespace.yml" "${folder}build/namespace.yml"
+	substituteVariables "name" "${namespaceName}" "${folder}build/namespace.yml"
+	kubectl create -f "${folder}build/namespace.yml"
+}
+
