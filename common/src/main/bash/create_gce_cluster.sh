@@ -15,14 +15,11 @@ curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s htt
     chmod +x ./kubectl && \
     mv ./kubectl /usr/local/bin/kubectl
 	
-curl https://sdk.cloud.google.com | bash
-
-exec -l $SHELL
-
-gcloud init
 
 gcloud container clusters create test --zone us-central1-a --num-nodes 1 --machine-type n1-standard-4
 
 gcloud container clusters get-credentials test --zone us-central1-a --project dulcet-hulling-185607
 
 echo kubectl get nodes
+
+
