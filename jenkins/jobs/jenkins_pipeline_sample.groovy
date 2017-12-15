@@ -98,62 +98,68 @@ String branchNameForInfra="master"
 		''')
 		}
 		publishers {
-			buildPipelineTrigger("install-istio,install-helm") {
+			buildPipelineTrigger("install-istio") {
 				parameters {
 					currentBuild()
 				}
 			}
 		}
 	}
-
-dsl.job("install-istio") {
-	deliveryPipelineConfiguration('Infra', 'install istio')
-	wrappers {
-		maskPasswords()
-		environmentVariables(defaults.defaultEnvVars)
-		timestamps()
-		colorizeOutput()
-		maskPasswords()
-		timeout {
-			noActivity(300)
-			failBuild()
-			writeDescription('Build failed due to timeout after {0} minutes of inactivity')
+	dsl.job("install-istio") {
+		deliveryPipelineConfiguration('Infra', 'install istio & helm')
+		wrappers {
+			maskPasswords()
+			environmentVariables(defaults.defaultEnvVars)
+			timestamps()
+			colorizeOutput()
+			maskPasswords()
+			timeout {
+				noActivity(300)
+				failBuild()
+				writeDescription('Build failed due to timeout after {0} minutes of inactivity')
+			}
+			credentialsBinding {
+				if (repoWithBinariesCredentials) usernamePassword('M2_SETTINGS_REPO_USERNAME', 'M2_SETTINGS_REPO_PASSWORD', repoWithBinariesCredentials)
+				if (dockerCredentials) usernamePassword('DOCKER_USERNAME', 'DOCKER_PASSWORD', dockerCredentials)
+			}
 		}
-	}
-	steps {
-		shell("""#!/bin/bash
+		jdk(jdkVersion)
+		scm {
+			git {
+				remote {
+					name('origin')
+					url(fullGitRepoForInfra)
+					branch(branchNameForInfra)
+					credentials(gitUseSshKey ? gitSshCredentials : gitCredentials)
+				}
+				extensions {
+					wipeOutWorkspace()
+				}
+			}
+		}
+		configure { def project ->
+			// Adding user email and name here instead of global settings
+			project / 'scm' / 'extensions' << 'hudson.plugins.git.extensions.impl.UserIdentity' {
+				'email'(gitEmail)
+				'name'(gitName)
+			}
+		}
+		steps {
+			shell("""#!/bin/bash
 		rm -rf .git/tools && git clone -b ${toolsBranch} --single-branch ${toolsRepo} .git/tools 
 		""")
-		shell('''#!/bin/bash
-	chmod +x ${WORKSPACE}/.git/tools/common/src/main/bash/prod_internal_switch.sh && ${WORKSPACE}/.git/tools/common/src/main/bash/install-istio.sh
-	''')
-	}
-}		 
-
-dsl.job("install-helm") {
-	deliveryPipelineConfiguration('Infra', 'install helm')
-	wrappers {
-		maskPasswords()
-		environmentVariables(defaults.defaultEnvVars)
-		timestamps()
-		colorizeOutput()
-		maskPasswords()
-		timeout {
-			noActivity(300)
-			failBuild()
-			writeDescription('Build failed due to timeout after {0} minutes of inactivity')
+			shell('''#!/bin/bash
+		chmod +x ${WORKSPACE}/.git/tools/common/src/main/bash/install_istio.sh && ${WORKSPACE}/.git/tools/common/src/main/bash/install_istio.sh
+		''')
 		}
-	}
-	steps {
-		shell("""#!/bin/bash
-		rm -rf .git/tools && git clone -b ${toolsBranch} --single-branch ${toolsRepo} .git/tools 
-		""")
-		shell('''#!/bin/bash
-	chmod +x ${WORKSPACE}/.git/tools/common/src/main/bash/prod_internal_switch.sh && ${WORKSPACE}/.git/tools/common/src/main/bash/install-helm.sh
-	''')
-	}
-}			 
-		 
+		publishers {
+			buildPipelineTrigger("install-istio,install-helm") {
+				parameters {
+					currentBuild()
+				}
+			}
+		}
+	}		 
 List<String> parsedRepos = repos.split(",")
 parsedRepos.each {
 	String gitRepoName = it.split('/').last() - '.git'

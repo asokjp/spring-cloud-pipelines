@@ -51,12 +51,17 @@ function logInToPaas() {
 }
 
 function downloadHelm() {
+	local clientOnly="${1}"
 	if ! [ -x "/usr/local/bin/helm" ]; then
 		echo "installing helm.."
 		curl https://raw.githubusercontent.com/kubernetes/helm/master/scripts/get > get_helm.sh
 		chmod 700 get_helm.sh
 		./get_helm.sh
-		helm init --client-only
+		if [["${clientOnly}" == "true" ]]; then
+			helm init --client-only
+		else
+			helm init
+		fi
 	fi
 }
 
