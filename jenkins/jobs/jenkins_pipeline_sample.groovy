@@ -149,7 +149,7 @@ String branchNameForInfra="master"
 		rm -rf .git/tools && git clone -b ${toolsBranch} --single-branch ${toolsRepo} .git/tools 
 		""")
 			shell('''#!/bin/bash
-		chmod +x ${WORKSPACE}/.git/tools/common/src/main/bash/install_istio.sh && ${WORKSPACE}/.git/tools/common/src/main/bash/install_istio.sh
+		chmod +x ${WORKSPACE}/.git/tools/common/src/main/bash/install-istio.sh && ${WORKSPACE}/.git/tools/common/src/main/bash/install-istio.sh
 		''')
 		}
 		publishers {
