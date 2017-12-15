@@ -26,7 +26,7 @@ source ~/.bashrc
 downloadIstio
 cd istio-0.3.0
 kubectl create clusterrolebinding cluster-admin-binding --clusterrole=cluster-admin --user=$(gcloud config get-value core/account)
-kubectl create clusterrolebinding cluster-admin-binding --clusterrole=cluster-admin --user=105226139860451521001
+#kubectl create clusterrolebinding cluster-admin-binding --clusterrole=cluster-admin --user=105226139860451521001
 kubectl apply -f install/kubernetes/istio.yaml
 #verify istio installation
 kubectl get svc -n istio-system
