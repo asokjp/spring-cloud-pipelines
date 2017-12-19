@@ -52,7 +52,7 @@ String fullGitRepoForInfra="https://github.com/asokjp/config-server1"
 String branchNameForInfra="master"
 String fullGitRepoForConfigserver="https://github.com/asokjp/prod-env-deploy"
 String branchNameForConfigserver="master"
-String projectName = "configserver-pipeline"
+String projectNameForConfig = "configserver-pipeline"
 	dsl.job("install-kubernetes-cluster") {
 		deliveryPipelineConfiguration('Infra', 'install kubernetes cluster')
 		wrappers {
@@ -156,7 +156,7 @@ String projectName = "configserver-pipeline"
 		''')
 		}
 		publishers {
-			buildPipelineTrigger("${projectName}-build") {
+			buildPipelineTrigger("${projectNameForConfig}-build") {
 				parameters {
 					currentBuild()
 				}
@@ -166,7 +166,7 @@ String projectName = "configserver-pipeline"
 	
 //Starting of Config server
 	
-	dsl.job("${projectName}-build") {
+	dsl.job("${projectNameForConfig}-build") {
 		deliveryPipelineConfiguration('Build', 'Build and Upload of config-server')
 		triggers {
 			cron(cronValue)
@@ -220,8 +220,8 @@ String projectName = "configserver-pipeline"
 		publishers {
 			archiveJunit(testReports)
 			String nextProject = apiCompatibilityStep ?
-				"${projectName}-build-api-check" :
-				"${projectName}-test-env-deploy"
+				"${projectNameForConfig}-build-api-check" :
+				"${projectNameForConfig}-test-env-deploy"
 			downstreamParameterized {
 				trigger(nextProject) {
 					triggerWithNoParameters()
@@ -242,7 +242,7 @@ String projectName = "configserver-pipeline"
 
 	if (apiCompatibilityStep) {
 
-		dsl.job("${projectName}-build-api-check") {
+		dsl.job("${projectNameForConfig}-build-api-check") {
 			deliveryPipelineConfiguration('Build', 'API compatibility check')
 			triggers {
 				cron(cronValue)
@@ -287,7 +287,7 @@ String projectName = "configserver-pipeline"
 					allowEmptyResults()
 				}
 				downstreamParameterized {
-					trigger("${projectName}-test-env-deploy") {
+					trigger("${projectNameForConfig}-test-env-deploy") {
 						triggerWithNoParameters()
 						parameters {
 							currentBuild()
@@ -299,7 +299,7 @@ String projectName = "configserver-pipeline"
 		}
 	}
 
-	dsl.job("${projectName}-test-env-deploy") {
+	dsl.job("${projectNameForConfig}-test-env-deploy") {
 		deliveryPipelineConfiguration('Test', 'Deploy to test')
 		wrappers {
 			deliveryPipelineVersion('${ENV,var="PIPELINE_VERSION"}', true)
@@ -354,7 +354,7 @@ String projectName = "configserver-pipeline"
 			}
 			// end::start[K8S]
 			downstreamParameterized {
-				trigger("${projectName}-test-env-test") {
+				trigger("${projectNameForConfig}-test-env-test") {
 					parameters {
 						currentBuild()
 					}
@@ -364,7 +364,7 @@ String projectName = "configserver-pipeline"
 		}
 	}
 
-	dsl.job("${projectName}-test-env-test") {
+	dsl.job("${projectNameForConfig}-test-env-test") {
 		deliveryPipelineConfiguration('Test', 'Tests on test')
 		wrappers {
 			deliveryPipelineVersion('${ENV,var="PIPELINE_VERSION"}', true)
@@ -409,7 +409,7 @@ String projectName = "configserver-pipeline"
 			archiveJunit(testReports)
 			if (rollbackStep) {
 				downstreamParameterized {
-					trigger("${projectName}-test-env-rollback-deploy") {
+					trigger("${projectNameForConfig}-test-env-rollback-deploy") {
 						parameters {
 							currentBuild()
 						}
@@ -419,7 +419,7 @@ String projectName = "configserver-pipeline"
 			} else {
 				String stepName = stageStep ? "stage" : "prod"
 				downstreamParameterized {
-					trigger("${projectName}-${stepName}-env-deploy") {
+					trigger("${projectNameForConfig}-${stepName}-env-deploy") {
 						parameters {
 							currentBuild()
 						}
@@ -431,7 +431,7 @@ String projectName = "configserver-pipeline"
 	}
 
 	if (rollbackStep) {
-		dsl.job("${projectName}-test-env-rollback-deploy") {
+		dsl.job("${projectNameForConfig}-test-env-rollback-deploy") {
 			deliveryPipelineConfiguration('Test', 'Deploy to test latest prod version')
 			wrappers {
 				deliveryPipelineVersion('${ENV,var="PIPELINE_VERSION"}', true)
@@ -482,7 +482,7 @@ String projectName = "configserver-pipeline"
 				}
 				// end::start[K8S]
 				downstreamParameterized {
-					trigger("${projectName}-test-env-rollback-test") {
+					trigger("${projectNameForConfig}-test-env-rollback-test") {
 						triggerWithNoParameters()
 						parameters {
 							currentBuild()
@@ -492,7 +492,7 @@ String projectName = "configserver-pipeline"
 			}
 		}
 
-		dsl.job("${projectName}-test-env-rollback-test") {
+		dsl.job("${projectNameForConfig}-test-env-rollback-test") {
 			deliveryPipelineConfiguration('Test', 'Tests on test latest prod version')
 			wrappers {
 				deliveryPipelineVersion('${ENV,var="PIPELINE_VERSION"}', true)
@@ -540,7 +540,7 @@ String projectName = "configserver-pipeline"
 					allowEmptyResults()
 				}
 				if(stageStep) {
-					String nextJob = "${projectName}-stage-env-deploy"
+					String nextJob = "${projectNameForConfig}-stage-env-deploy"
 					if (autoStage) {
 						downstreamParameterized {
 							trigger(nextJob) {
@@ -557,7 +557,7 @@ String projectName = "configserver-pipeline"
 						}
 					}
 				} else {
-						String nextJob = "${projectName}-prod-env-deploy"
+						String nextJob = "${projectNameForConfig}-prod-env-deploy"
 						if (autoProd) {
 							downstreamParameterized {
 								trigger(nextJob) {
@@ -579,7 +579,7 @@ String projectName = "configserver-pipeline"
 	}
 
 	if (stageStep) {
-		dsl.job("${projectName}-stage-env-deploy") {
+		dsl.job("${projectNameForConfig}-stage-env-deploy") {
 			deliveryPipelineConfiguration('Stage', 'Deploy to stage')
 			wrappers {
 				deliveryPipelineVersion('${ENV,var="PIPELINE_VERSION"}', true)
@@ -637,7 +637,7 @@ String projectName = "configserver-pipeline"
 				// end::start[K8S]
 				if (autoStage) {
 					downstreamParameterized {
-						trigger("${projectName}-stage-env-test") {
+						trigger("${projectNameForConfig}-stage-env-test") {
 							triggerWithNoParameters()
 							parameters {
 								currentBuild()
@@ -645,7 +645,7 @@ String projectName = "configserver-pipeline"
 						}
 					}
 				} else {
-					buildPipelineTrigger("${projectName}-stage-env-test") {
+					buildPipelineTrigger("${projectNameForConfig}-stage-env-test") {
 						parameters {
 							currentBuild()
 						}
@@ -654,7 +654,7 @@ String projectName = "configserver-pipeline"
 			}
 		}
 
-		dsl.job("${projectName}-stage-env-test") {
+		dsl.job("${projectNameForConfig}-stage-env-test") {
 			deliveryPipelineConfiguration('Stage', 'End to end tests on stage')
 			wrappers {
 				deliveryPipelineVersion('${ENV,var="PIPELINE_VERSION"}', true)
@@ -699,7 +699,7 @@ String projectName = "configserver-pipeline"
 			}
 			publishers {
 				archiveJunit(testReports)
-				String nextJob = "${projectName}-prod-env-deploy"
+				String nextJob = "${projectNameForConfig}-prod-env-deploy"
 				if (autoProd) {
 					downstreamParameterized {
 						trigger(nextJob) {
@@ -719,7 +719,7 @@ String projectName = "configserver-pipeline"
 		}
 	}
 
-	dsl.job("${projectName}-prod-env-deploy") {
+	dsl.job("${projectNameForConfig}-prod-env-deploy") {
 		deliveryPipelineConfiguration('Prod', 'Deploy to prod')
 		wrappers {
 			deliveryPipelineVersion('${ENV,var="PIPELINE_VERSION"}', true)
@@ -780,7 +780,7 @@ String projectName = "configserver-pipeline"
 				// remove::end[CF]
 			}
 			// end::start[K8S]
-			buildPipelineTrigger("${projectName}-prod-env-complete,${projectName}-prod-env-rollback") {
+			buildPipelineTrigger("${projectNameForConfig}-prod-env-complete,${projectNameForConfig}-prod-env-rollback") {
 				parameters {
 					currentBuild()
 				}
@@ -796,7 +796,7 @@ String projectName = "configserver-pipeline"
 		}
 	}
 
-	dsl.job("${projectName}-prod-env-rollback") {
+	dsl.job("${projectNameForConfig}-prod-env-rollback") {
 		deliveryPipelineConfiguration('Prod', 'Rollback')
 		wrappers {
 			deliveryPipelineVersion('${ENV,var="PIPELINE_VERSION"}', true)
@@ -842,7 +842,7 @@ String projectName = "configserver-pipeline"
 		}
 	}
 
-	dsl.job("${projectName}-prod-env-complete") {
+	dsl.job("${projectNameForConfig}-prod-env-complete") {
 		deliveryPipelineConfiguration('Prod', 'Complete switch over')
 		wrappers {
 			deliveryPipelineVersion('${ENV,var="PIPELINE_VERSION"}', true)
