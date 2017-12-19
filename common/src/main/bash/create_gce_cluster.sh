@@ -26,10 +26,12 @@ echo "moving to root folder"
 cd /root
 echo "listing folder"
 ls		
+$cp /etc/skel/.bashrc ~
+ls -la ~/ | more
 source ~/.bashrc
-gcloud container clusters create test --zone us-central1-a --num-nodes 1 --machine-type n1-standard-4
+gcloud container clusters create test --zone us-east1-c --num-nodes 1 --machine-type n1-standard-4
 
-gcloud container clusters get-credentials test --zone us-central1-a --project dulcet-hulling-185607
+gcloud container clusters get-credentials test --zone us-east1-c --project kinetic-raceway-189410
 
 mkdir -p build
 		createNamespace "sc-pipelines-test"
