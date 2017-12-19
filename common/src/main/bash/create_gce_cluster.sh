@@ -26,7 +26,7 @@ echo "moving to root folder"
 cd /root
 echo "listing folder"
 ls		
-$cp /etc/skel/.bashrc ~
+cp /etc/skel/.bashrc ~
 ls -la ~/ | more
 source ~/.bashrc
 gcloud container clusters create test --zone us-east1-c --num-nodes 1 --machine-type n1-standard-4
