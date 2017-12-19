@@ -47,9 +47,12 @@ String prodDeployrepo="https://github.com/asokjp/prod-env-deploy.git"
 // we're parsing the REPOS parameter to retrieve list of repos to build
 String repos = binding.variables["REPOS"] ?:
 		["https://github.com/asokjp/claimant-service",
-		 "https://github.com/asokjp/config-server1","https://github.com/asokjp/hello-world","https://github.com/asokjp/prod-env-deploy"].join(",")
-String fullGitRepoForInfra="https://github.com/asokjp/prod-env-deploy"
+		 "https://github.com/asokjp/hello-world","https://github.com/asokjp/prod-env-deploy"].join(",")
+String fullGitRepoForInfra="https://github.com/asokjp/config-server1"
 String branchNameForInfra="master"
+String fullGitRepoForConfigserver="https://github.com/asokjp/prod-env-deploy"
+String branchNameForConfigserver="master"
+String projectName = "configserver-pipeline"
 	dsl.job("install-kubernetes-cluster") {
 		deliveryPipelineConfiguration('Infra', 'install kubernetes cluster')
 		wrappers {
@@ -153,13 +156,739 @@ String branchNameForInfra="master"
 		''')
 		}
 		publishers {
-			buildPipelineTrigger("install-istio,install-helm") {
+			buildPipelineTrigger("${projectName}-build") {
 				parameters {
 					currentBuild()
 				}
 			}
 		}
 	}		 
+	
+//Starting of Config server
+	
+	dsl.job("${projectName}-build") {
+		deliveryPipelineConfiguration('Build', 'Build and Upload of config-server')
+		triggers {
+			cron(cronValue)
+			githubPush()
+		}
+		wrappers {
+			deliveryPipelineVersion(pipelineVersion, true)
+			environmentVariables(defaults.defaultEnvVars)
+			timestamps()
+			colorizeOutput()
+			maskPasswords()
+			timeout {
+				noActivity(300)
+				failBuild()
+				writeDescription('Build failed due to timeout after {0} minutes of inactivity')
+			}
+			credentialsBinding {
+				if (repoWithBinariesCredentials) usernamePassword('M2_SETTINGS_REPO_USERNAME', 'M2_SETTINGS_REPO_PASSWORD', repoWithBinariesCredentials)
+				if (dockerCredentials) usernamePassword('DOCKER_USERNAME', 'DOCKER_PASSWORD', dockerCredentials)
+			}
+		}
+		jdk(jdkVersion)
+		scm {
+			git {
+				remote {
+					name('origin')
+					url(fullGitRepoForConfigserver)
+					branch(branchNameForConfigserver)
+					credentials(gitUseSshKey ? gitSshCredentials : gitCredentials)
+				}
+				extensions {
+					wipeOutWorkspace()
+				}
+			}
+		}
+		configure { def project ->
+			// Adding user email and name here instead of global settings
+			project / 'scm' / 'extensions' << 'hudson.plugins.git.extensions.impl.UserIdentity' {
+				'email'(gitEmail)
+				'name'(gitName)
+			}
+		}
+		steps {
+			shell("""#!/bin/bash
+		rm -rf .git/tools && git clone -b ${toolsBranch} --single-branch ${toolsRepo} .git/tools 
+		""")
+			shell('''#!/bin/bash 
+		${WORKSPACE}/.git/tools/common/src/main/bash/build_and_upload.sh
+		''')
+		}
+		publishers {
+			archiveJunit(testReports)
+			String nextProject = apiCompatibilityStep ?
+				"${projectName}-build-api-check" :
+				"${projectName}-test-env-deploy"
+			downstreamParameterized {
+				trigger(nextProject) {
+					triggerWithNoParameters()
+					parameters {
+						currentBuild()
+					}
+				}
+			}
+			git {
+				pushOnlyIfSuccess()
+				tag('origin', "dev/\${PIPELINE_VERSION}") {
+					create()
+					update()
+				}
+			}
+		}
+	}
+
+	if (apiCompatibilityStep) {
+
+		dsl.job("${projectName}-build-api-check") {
+			deliveryPipelineConfiguration('Build', 'API compatibility check')
+			triggers {
+				cron(cronValue)
+				githubPush()
+			}
+			wrappers {
+				deliveryPipelineVersion('${ENV,var="PIPELINE_VERSION"}', true)
+				environmentVariables(defaults.defaultEnvVars)
+				timestamps()
+				colorizeOutput()
+				maskPasswords()
+				timeout {
+					noActivity(300)
+					failBuild()
+					writeDescription('Build failed due to timeout after {0} minutes of inactivity')
+				}
+			}
+			jdk(jdkVersion)
+			scm {
+				git {
+					remote {
+						name('origin')
+						url(fullGitRepo)
+						branch('dev/${PIPELINE_VERSION}')
+						credentials(gitUseSshKey ? gitSshCredentials : gitCredentials)
+					}
+					extensions {
+						wipeOutWorkspace()
+					}
+				}
+			}
+			steps {
+				shell("""#!/bin/bash
+		rm -rf .git/tools && git clone -b ${toolsBranch} --single-branch ${toolsRepo} .git/tools 
+		""")
+				shell('''#!/bin/bash
+		${WORKSPACE}/.git/tools/common/src/main/bash/build_api_compatibility_check.sh
+		''')
+			}
+			publishers {
+				archiveJunit(testReports) {
+					allowEmptyResults()
+				}
+				downstreamParameterized {
+					trigger("${projectName}-test-env-deploy") {
+						triggerWithNoParameters()
+						parameters {
+							currentBuild()
+							propertiesFile('${OUTPUT_FOLDER}/test.properties', false)
+						}
+					}
+				}
+			}
+		}
+	}
+
+	dsl.job("${projectName}-test-env-deploy") {
+		deliveryPipelineConfiguration('Test', 'Deploy to test')
+		wrappers {
+			deliveryPipelineVersion('${ENV,var="PIPELINE_VERSION"}', true)
+			environmentVariables(defaults.defaultEnvVars)
+			credentialsBinding {
+				// remove::start[CF]
+				if (cfTestCredentialId) usernamePassword('PAAS_TEST_USERNAME', 'PAAS_TEST_PASSWORD', cfTestCredentialId)
+				// remove::end[CF]
+				// remove::start[K8S]
+				// TODO: What to do about this?
+				if (mySqlCredential) usernamePassword('MYSQL_USER', 'MYSQL_PASSWORD', mySqlCredential)
+				if (mySqlRootCredential) usernamePassword('MYSQL_ROOT_USER', 'MYSQL_ROOT_PASSWORD', mySqlRootCredential)
+				if(k8sTestTokenCredentialId) string("TOKEN", k8sTestTokenCredentialId)
+				// remove::end[K8S]
+			}
+			timestamps()
+			colorizeOutput()
+			maskPasswords()
+			timeout {
+				noActivity(300)
+				failBuild()
+				writeDescription('Build failed due to timeout after {0} minutes of inactivity')
+			}
+		}
+		scm {
+			git {
+				remote {
+					url(fullGitRepo)
+					branch('dev/${PIPELINE_VERSION}')
+				}
+				extensions {
+					wipeOutWorkspace()
+				}
+			}
+		}
+		steps {
+			shell("""#!/bin/bash
+		rm -rf .git/tools && git clone -b ${toolsBranch} --single-branch ${toolsRepo} .git/tools 
+		""")
+			shell('''#!/bin/bash
+		${WORKSPACE}/.git/tools/common/src/main/bash/test_deploy.sh
+		''')
+		}
+		publishers {
+			// remove::start[K8S]
+			archiveArtifacts {
+				pattern("**/build/**/k8s/*.yml")
+				pattern("**/target/**/k8s/*.yml")
+				// remove::start[CF]
+				allowEmpty()
+				// remove::end[CF]
+			}
+			// end::start[K8S]
+			downstreamParameterized {
+				trigger("${projectName}-test-env-test") {
+					parameters {
+						currentBuild()
+					}
+					triggerWithNoParameters()
+				}
+			}
+		}
+	}
+
+	dsl.job("${projectName}-test-env-test") {
+		deliveryPipelineConfiguration('Test', 'Tests on test')
+		wrappers {
+			deliveryPipelineVersion('${ENV,var="PIPELINE_VERSION"}', true)
+			environmentVariables(defaults.defaultEnvVars)
+			credentialsBinding {
+				// remove::start[CF]
+				if (cfTestCredentialId) usernamePassword('PAAS_TEST_USERNAME', 'PAAS_TEST_PASSWORD', cfTestCredentialId)
+				// remove::end[CF]
+				// remove::start[K8S]
+				if (k8sTestTokenCredentialId) string("TOKEN", k8sTestTokenCredentialId)
+				// remove::end[K8S]
+			}
+			timestamps()
+			colorizeOutput()
+			maskPasswords()
+			timeout {
+				noActivity(300)
+				failBuild()
+				writeDescription('Build failed due to timeout after {0} minutes of inactivity')
+			}
+		}
+		scm {
+			git {
+				remote {
+					url(fullGitRepo)
+					branch('dev/${PIPELINE_VERSION}')
+				}
+				extensions {
+					wipeOutWorkspace()
+				}
+			}
+		}
+		steps {
+			shell("""#!/bin/bash
+		rm -rf .git/tools && git clone -b ${toolsBranch} --single-branch ${toolsRepo} .git/tools 
+		""")
+			shell('''#!/bin/bash
+		${WORKSPACE}/.git/tools/common/src/main/bash/test_smoke.sh
+		''')
+		}
+		publishers {
+			archiveJunit(testReports)
+			if (rollbackStep) {
+				downstreamParameterized {
+					trigger("${projectName}-test-env-rollback-deploy") {
+						parameters {
+							currentBuild()
+						}
+						triggerWithNoParameters()
+					}
+				}
+			} else {
+				String stepName = stageStep ? "stage" : "prod"
+				downstreamParameterized {
+					trigger("${projectName}-${stepName}-env-deploy") {
+						parameters {
+							currentBuild()
+						}
+						triggerWithNoParameters()
+					}
+				}
+			}
+		}
+	}
+
+	if (rollbackStep) {
+		dsl.job("${projectName}-test-env-rollback-deploy") {
+			deliveryPipelineConfiguration('Test', 'Deploy to test latest prod version')
+			wrappers {
+				deliveryPipelineVersion('${ENV,var="PIPELINE_VERSION"}', true)
+				environmentVariables {
+					environmentVariables(defaults.defaultEnvVars)
+				}
+				credentialsBinding {
+					// remove::start[CF]
+					if (cfTestCredentialId) usernamePassword('PAAS_TEST_USERNAME', 'PAAS_TEST_PASSWORD', cfTestCredentialId)
+					// remove::end[CF]
+					// remove::start[K8S]
+					if (k8sTestTokenCredentialId) string("TOKEN", k8sTestTokenCredentialId)
+					// remove::end[K8S]
+				}
+				timeout {
+					noActivity(300)
+					failBuild()
+					writeDescription('Build failed due to timeout after {0} minutes of inactivity')
+				}
+			}
+			scm {
+				git {
+					remote {
+						url(fullGitRepo)
+						branch('dev/${PIPELINE_VERSION}')
+					}
+					extensions {
+						wipeOutWorkspace()
+					}
+				}
+			}
+			steps {
+				shell("""#!/bin/bash
+		rm -rf .git/tools && git clone -b ${toolsBranch} --single-branch ${toolsRepo} .git/tools 
+		""")
+				shell('''#!/bin/bash
+		${WORKSPACE}/.git/tools/common/src/main/bash/test_rollback_deploy.sh
+		''')
+			}
+			publishers {
+				// remove::start[K8S]
+				archiveArtifacts {
+					pattern("**/build/**/k8s/*.yml")
+					pattern("**/target/**/k8s/*.yml")
+					// remove::start[CF]
+					allowEmpty()
+					// remove::end[CF]
+				}
+				// end::start[K8S]
+				downstreamParameterized {
+					trigger("${projectName}-test-env-rollback-test") {
+						triggerWithNoParameters()
+						parameters {
+							currentBuild()
+						}
+					}
+				}
+			}
+		}
+
+		dsl.job("${projectName}-test-env-rollback-test") {
+			deliveryPipelineConfiguration('Test', 'Tests on test latest prod version')
+			wrappers {
+				deliveryPipelineVersion('${ENV,var="PIPELINE_VERSION"}', true)
+				environmentVariables {
+					environmentVariables(defaults.defaultEnvVars)
+				}
+				credentialsBinding {
+					// remove::start[CF]
+					if (cfTestCredentialId) usernamePassword('PAAS_TEST_USERNAME', 'PAAS_TEST_PASSWORD', cfTestCredentialId)
+					// remove::end[CF]
+					// remove::start[K8S]
+					if (k8sStageTokenCredentialId) string("TOKEN", k8sStageTokenCredentialId)
+					// remove::end[K8S]
+				}
+				timestamps()
+				colorizeOutput()
+				maskPasswords()
+				timeout {
+					noActivity(300)
+					failBuild()
+					writeDescription('Build failed due to timeout after {0} minutes of inactivity')
+				}
+			}
+			scm {
+				git {
+					remote {
+						url(fullGitRepo)
+						branch('dev/${PIPELINE_VERSION}')
+					}
+					extensions {
+						wipeOutWorkspace()
+					}
+				}
+			}
+			steps {
+				shell("""#!/bin/bash
+		rm -rf .git/tools && git clone -b ${toolsBranch} --single-branch ${toolsRepo} .git/tools 
+		""")
+				shell('''#!/bin/bash
+		${WORKSPACE}/.git/tools/common/src/main/bash/test_rollback_smoke.sh
+		''')
+			}
+			publishers {
+				archiveJunit(testReports) {
+					allowEmptyResults()
+				}
+				if(stageStep) {
+					String nextJob = "${projectName}-stage-env-deploy"
+					if (autoStage) {
+						downstreamParameterized {
+							trigger(nextJob) {
+								parameters {
+									currentBuild()
+								}
+							}
+						}
+					} else {
+						buildPipelineTrigger(nextJob) {
+							parameters {
+								currentBuild()
+							}
+						}
+					}
+				} else {
+						String nextJob = "${projectName}-prod-env-deploy"
+						if (autoProd) {
+							downstreamParameterized {
+								trigger(nextJob) {
+									parameters {
+										currentBuild()
+									}
+								}
+							}
+						} else {
+							buildPipelineTrigger(nextJob) {
+								parameters {
+									currentBuild()
+								}
+							}
+						}
+				}
+			}
+		}
+	}
+
+	if (stageStep) {
+		dsl.job("${projectName}-stage-env-deploy") {
+			deliveryPipelineConfiguration('Stage', 'Deploy to stage')
+			wrappers {
+				deliveryPipelineVersion('${ENV,var="PIPELINE_VERSION"}', true)
+				maskPasswords()
+				environmentVariables {
+					environmentVariables(defaults.defaultEnvVars)
+				}
+				credentialsBinding {
+					// remove::start[CF]
+					if (cfStageCredentialId) usernamePassword('PAAS_STAGE_USERNAME', 'PAAS_STAGE_PASSWORD', cfStageCredentialId)
+					// remove::end[CF]
+					// remove::start[K8S]
+					if (mySqlCredential) usernamePassword('MYSQL_USER', 'MYSQL_PASSWORD', mySqlCredential)
+					if (mySqlRootCredential) usernamePassword('MYSQL_ROOT_USER', 'MYSQL_ROOT_PASSWORD', mySqlRootCredential)
+					if (k8sStageTokenCredentialId) string("TOKEN", k8sStageTokenCredentialId)
+					// remove::end[K8S]
+				}
+				timestamps()
+				colorizeOutput()
+				maskPasswords()
+				timeout {
+					noActivity(300)
+					failBuild()
+					writeDescription('Build failed due to timeout after {0} minutes of inactivity')
+				}
+			}
+			scm {
+				git {
+					remote {
+						url(fullGitRepo)
+						branch('dev/${PIPELINE_VERSION}')
+					}
+					extensions {
+						wipeOutWorkspace()
+					}
+				}
+			}
+			steps {
+				shell("""#!/bin/bash
+		rm -rf .git/tools && git clone -b ${toolsBranch} --single-branch ${toolsRepo} .git/tools 
+		""")
+				shell('''#!/bin/bash
+		${WORKSPACE}/.git/tools/common/src/main/bash/stage_deploy.sh
+		''')
+			}
+			publishers {
+				// remove::start[K8S]
+				archiveArtifacts {
+					pattern("**/build/**/k8s/*.yml")
+					pattern("**/target/**/k8s/*.yml")
+					// remove::start[CF]
+					allowEmpty()
+					// remove::end[CF]
+				}
+				// end::start[K8S]
+				if (autoStage) {
+					downstreamParameterized {
+						trigger("${projectName}-stage-env-test") {
+							triggerWithNoParameters()
+							parameters {
+								currentBuild()
+							}
+						}
+					}
+				} else {
+					buildPipelineTrigger("${projectName}-stage-env-test") {
+						parameters {
+							currentBuild()
+						}
+					}
+				}
+			}
+		}
+
+		dsl.job("${projectName}-stage-env-test") {
+			deliveryPipelineConfiguration('Stage', 'End to end tests on stage')
+			wrappers {
+				deliveryPipelineVersion('${ENV,var="PIPELINE_VERSION"}', true)
+				environmentVariables {
+					environmentVariables(defaults.defaultEnvVars)
+				}
+				credentialsBinding {
+					// remove::start[CF]
+					if (cfStageCredentialId) usernamePassword('PAAS_STAGE_USERNAME', 'PAAS_STAGE_PASSWORD', cfStageCredentialId)
+					// remove::end[CF]
+					// remove::start[K8S]
+					if(k8sStageTokenCredentialId) string("TOKEN", k8sStageTokenCredentialId)
+					// remove::end[K8S]
+				}
+				timestamps()
+				colorizeOutput()
+				maskPasswords()
+				timeout {
+					noActivity(300)
+					failBuild()
+					writeDescription('Build failed due to timeout after {0} minutes of inactivity')
+				}
+			}
+			scm {
+				git {
+					remote {
+						url(fullGitRepo)
+						branch('dev/${PIPELINE_VERSION}')
+					}
+					extensions {
+						wipeOutWorkspace()
+					}
+				}
+			}
+			steps {
+				shell("""#!/bin/bash
+		rm -rf .git/tools && git clone -b ${toolsBranch} --single-branch ${toolsRepo} .git/tools 
+		""")
+				shell('''#!/bin/bash
+		${WORKSPACE}/.git/tools/common/src/main/bash/stage_e2e.sh
+		''')
+			}
+			publishers {
+				archiveJunit(testReports)
+				String nextJob = "${projectName}-prod-env-deploy"
+				if (autoProd) {
+					downstreamParameterized {
+						trigger(nextJob) {
+							parameters {
+								currentBuild()
+							}
+						}
+					}
+				} else {
+					buildPipelineTrigger(nextJob) {
+						parameters {
+							currentBuild()
+						}
+					}
+				}
+			}
+		}
+	}
+
+	dsl.job("${projectName}-prod-env-deploy") {
+		deliveryPipelineConfiguration('Prod', 'Deploy to prod')
+		wrappers {
+			deliveryPipelineVersion('${ENV,var="PIPELINE_VERSION"}', true)
+			maskPasswords()
+			environmentVariables(defaults.defaultEnvVars)
+			credentialsBinding {
+				// remove::start[CF]
+				if (cfProdCredentialId) usernamePassword('PAAS_PROD_USERNAME', 'PAAS_PROD_PASSWORD', cfProdCredentialId)
+				// remove::end[CF]
+				// remove::start[K8S]
+				if (k8sProdTokenCredentialId) string("TOKEN", k8sProdTokenCredentialId)
+				// remove::end[K8S]
+			}
+			timestamps()
+			colorizeOutput()
+			maskPasswords()
+			timeout {
+				noActivity(300)
+				failBuild()
+				writeDescription('Build failed due to timeout after {0} minutes of inactivity')
+			}
+		}
+		scm {
+			git {
+				remote {
+					name('origin')
+					url(fullGitRepo)
+					branch('dev/${PIPELINE_VERSION}')
+					credentials(gitUseSshKey ? gitSshCredentials : gitCredentials)
+				}
+				extensions {
+					wipeOutWorkspace()
+				}
+			}
+		}
+		configure { def project ->
+			// Adding user email and name here instead of global settings
+			project / 'scm' / 'extensions' << 'hudson.plugins.git.extensions.impl.UserIdentity' {
+				'email'(gitEmail)
+				'name'(gitName)
+			}
+		}
+		steps {
+			shell("""#!/bin/bash
+		rm -rf .git/tools && git clone -b ${toolsBranch} --single-branch ${toolsRepo} .git/tools 
+		""")
+			shell('''#!/bin/bash
+		${WORKSPACE}/.git/tools/common/src/main/bash/prod_deploy.sh
+		''')
+		}
+		publishers {
+			// remove::start[K8S]
+			archiveArtifacts {
+				pattern("**/build/**/k8s/*.yml")
+				pattern("**/target/**/k8s/*.yml")
+				// remove::start[CF]
+				allowEmpty()
+				// remove::end[CF]
+			}
+			// end::start[K8S]
+			buildPipelineTrigger("${projectName}-prod-env-complete,${projectName}-prod-env-rollback") {
+				parameters {
+					currentBuild()
+				}
+			}
+			git {
+				forcePush(true)
+				pushOnlyIfSuccess()
+				tag('origin', "prod/\${PIPELINE_VERSION}") {
+					create()
+					update()
+				}
+			}
+		}
+	}
+
+	dsl.job("${projectName}-prod-env-rollback") {
+		deliveryPipelineConfiguration('Prod', 'Rollback')
+		wrappers {
+			deliveryPipelineVersion('${ENV,var="PIPELINE_VERSION"}', true)
+			maskPasswords()
+			environmentVariables(defaults.defaultEnvVars)
+			credentialsBinding {
+				// remove::start[CF]
+				if (cfProdCredentialId) usernamePassword('PAAS_PROD_USERNAME', 'PAAS_PROD_PASSWORD', cfProdCredentialId)
+				// remove::end[CF]
+				// remove::start[K8S]
+				if(k8sTestTokenCredentialId) string("TOKEN", k8sTestTokenCredentialId)
+				// remove::end[K8S]
+			}
+			timestamps()
+			colorizeOutput()
+			maskPasswords()
+			timeout {
+				noActivity(300)
+				failBuild()
+				writeDescription('Build failed due to timeout after {0} minutes of inactivity')
+			}
+		}
+		scm {
+			git {
+				remote {
+					name('origin')
+					url(fullGitRepo)
+					branch('dev/${PIPELINE_VERSION}')
+					credentials(gitUseSshKey ? gitSshCredentials : gitCredentials)
+				}
+				extensions {
+					wipeOutWorkspace()
+				}
+			}
+		}
+		steps {
+			shell("""#!/bin/bash
+		rm -rf .git/tools && git clone -b ${toolsBranch} --single-branch ${toolsRepo} .git/tools 
+		""")
+			shell('''#!/bin/bash
+		${WORKSPACE}/.git/tools/common/src/main/bash/prod_rollback.sh
+		''')
+		}
+	}
+
+	dsl.job("${projectName}-prod-env-complete") {
+		deliveryPipelineConfiguration('Prod', 'Complete switch over')
+		wrappers {
+			deliveryPipelineVersion('${ENV,var="PIPELINE_VERSION"}', true)
+			maskPasswords()
+			environmentVariables(defaults.defaultEnvVars)
+			credentialsBinding {
+				// remove::start[CF]
+				if (cfProdCredentialId) usernamePassword('PAAS_PROD_USERNAME', 'PAAS_PROD_PASSWORD', cfProdCredentialId)
+				// remove::end[CF]
+				// remove::start[K8S]
+				if(k8sTestTokenCredentialId) string("TOKEN", k8sTestTokenCredentialId)
+				// remove::end[K8S]
+			}
+			timestamps()
+			colorizeOutput()
+			maskPasswords()
+			timeout {
+				noActivity(300)
+				failBuild()
+				writeDescription('Build failed due to timeout after {0} minutes of inactivity')
+			}
+		}
+		scm {
+			git {
+				remote {
+					name('origin')
+					url(fullGitRepo)
+					branch('dev/${PIPELINE_VERSION}')
+					credentials(gitUseSshKey ? gitSshCredentials : gitCredentials)
+				}
+				extensions {
+					wipeOutWorkspace()
+				}
+			}
+		}
+		steps {
+			shell("""#!/bin/bash
+		rm -rf .git/tools && git clone -b ${toolsBranch} --single-branch ${toolsRepo} .git/tools 
+		""")
+			shell('''#!/bin/bash
+		${WORKSPACE}/.git/tools/common/src/main/bash/prod_complete.sh
+		''')
+		}
+	}	
+	
+//End of config server
 List<String> parsedRepos = repos.split(",")
 parsedRepos.each {
 	String gitRepoName = it.split('/').last() - '.git'
