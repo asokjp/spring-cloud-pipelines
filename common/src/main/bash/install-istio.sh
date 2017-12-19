@@ -9,24 +9,10 @@ __DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 [[ -f "${__DIR}/pipeline.sh" ]] && source "${__DIR}/pipeline.sh" ||  \
  echo "No pipeline.sh found"
 
-GCLOUD_PARENT_PATH="${GCLOUD_PARENT_PATH:-${HOME}/gcloud}"
-		GCLOUD_PATH="${GCLOUD_PATH:-${GCLOUD_PARENT_PATH}/google-cloud-sdk}"
-		if ! [ -x "${GCLOUD_PATH}" ]; then
-			echo "installing gcloud.."
-			downloadGCloud
-		fi
-#echo "moving to base folder"
-#cd /
-#echo "moving to root folder"
-#cd /root
-#echo "listing folder"
-#ls		
-source ~/.bashrc
-#installing istio 
 downloadIstio
 cd istio-0.3.0
 #kubectl create clusterrolebinding cluster-admin-binding --clusterrole=cluster-admin --user=$(gcloud config get-value core/account)
-kubectl create clusterrolebinding cluster-admin-binding --clusterrole=cluster-admin --user=105226139860451521001
+kubectl create clusterrolebinding cluster-admin-binding --clusterrole=cluster-admin --user=115964911880601849962
 kubectl apply -f install/kubernetes/istio.yaml
 #verify istio installation
 kubectl get svc -n istio-system
