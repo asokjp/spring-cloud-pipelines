@@ -5,7 +5,7 @@ DslFactory dsl = this
 // we're parsing the REPOS parameter to retrieve list of repos to build
 String repos = binding.variables['REPOS'] ?:
 		['https://github.com/asokjp/claimant-service',
-		 'https://github.com/asokjp/config-server1','https://github.com/asokjp/hello-world','https://github.com/asokjp/prod-env-deploy'].join(',')
+		 'https://github.com/asokjp/hello-world','https://github.com/asokjp/prod-env-deploy'].join(',')
 		 
 dsl.deliveryPipelineView("Infra-pipeline") {
 		allowPipelineStart()
