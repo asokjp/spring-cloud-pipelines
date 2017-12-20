@@ -52,7 +52,7 @@ String fullGitRepoForInfra="https://github.com/asokjp/prod-env-deploy"
 String branchNameForInfra="master"
 String fullGitRepoForConfigserver="https://github.com/asokjp/config-server1"
 String branchNameForConfigserver="master"
-String projectNameForConfig = "configserver1-pipeline"
+String projectNameForConfig = "config-server1-pipeline"
 	dsl.job("install-kubernetes-cluster") {
 		deliveryPipelineConfiguration('Infra', 'install kubernetes cluster')
 		wrappers {
