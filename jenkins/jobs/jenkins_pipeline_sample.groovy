@@ -265,7 +265,7 @@ String projectNameForConfig = "configserver-pipeline"
 				git {
 					remote {
 						name('origin')
-						url(fullGitRepo)
+						url(fullGitRepoForConfigserver)
 						branch('dev/${PIPELINE_VERSION}')
 						credentials(gitUseSshKey ? gitSshCredentials : gitCredentials)
 					}
@@ -327,7 +327,7 @@ String projectNameForConfig = "configserver-pipeline"
 		scm {
 			git {
 				remote {
-					url(fullGitRepo)
+					url(fullGitRepoForConfigserver)
 					branch('dev/${PIPELINE_VERSION}')
 				}
 				extensions {
@@ -389,7 +389,7 @@ String projectNameForConfig = "configserver-pipeline"
 		scm {
 			git {
 				remote {
-					url(fullGitRepo)
+					url(fullGitRepoForConfigserver)
 					branch('dev/${PIPELINE_VERSION}')
 				}
 				extensions {
@@ -455,7 +455,7 @@ String projectNameForConfig = "configserver-pipeline"
 			scm {
 				git {
 					remote {
-						url(fullGitRepo)
+						url(fullGitRepoForConfigserver)
 						branch('dev/${PIPELINE_VERSION}')
 					}
 					extensions {
@@ -519,7 +519,7 @@ String projectNameForConfig = "configserver-pipeline"
 			scm {
 				git {
 					remote {
-						url(fullGitRepo)
+						url(fullGitRepoForConfigserver)
 						branch('dev/${PIPELINE_VERSION}')
 					}
 					extensions {
@@ -609,7 +609,7 @@ String projectNameForConfig = "configserver-pipeline"
 			scm {
 				git {
 					remote {
-						url(fullGitRepo)
+						url(fullGitRepoForConfigserver)
 						branch('dev/${PIPELINE_VERSION}')
 					}
 					extensions {
@@ -681,7 +681,7 @@ String projectNameForConfig = "configserver-pipeline"
 			scm {
 				git {
 					remote {
-						url(fullGitRepo)
+						url(fullGitRepoForConfigserver)
 						branch('dev/${PIPELINE_VERSION}')
 					}
 					extensions {
@@ -746,7 +746,7 @@ String projectNameForConfig = "configserver-pipeline"
 			git {
 				remote {
 					name('origin')
-					url(fullGitRepo)
+					url(fullGitRepoForConfigserver)
 					branch('dev/${PIPELINE_VERSION}')
 					credentials(gitUseSshKey ? gitSshCredentials : gitCredentials)
 				}
@@ -823,7 +823,7 @@ String projectNameForConfig = "configserver-pipeline"
 			git {
 				remote {
 					name('origin')
-					url(fullGitRepo)
+					url(fullGitRepoForConfigserver)
 					branch('dev/${PIPELINE_VERSION}')
 					credentials(gitUseSshKey ? gitSshCredentials : gitCredentials)
 				}
@@ -869,7 +869,7 @@ String projectNameForConfig = "configserver-pipeline"
 			git {
 				remote {
 					name('origin')
-					url(fullGitRepo)
+					url(fullGitRepoForConfigserver)
 					branch('dev/${PIPELINE_VERSION}')
 					credentials(gitUseSshKey ? gitSshCredentials : gitCredentials)
 				}
