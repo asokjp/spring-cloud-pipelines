@@ -639,6 +639,7 @@ function waitForAppToStart() {
 	port="$(portFromKubernetes "${appName}")"
 	local applicationHost
 	applicationHost="$(applicationHost "${appName}")"
+	applicationHost="35.185.65.162"
 	echo "application host is - ${applicationHost}" 
 	isAppRunning "${applicationHost}" "${port}"
 }
@@ -784,7 +785,7 @@ function performGreenDeploymentOfOtherServices {
 		if [[ "${ingressDeployed}" == "false" ]]; then
 			deployApp "${ingressFile}"
 		fi
-	downloadHelm
+	downloadHelm "true"
 	local chartVersion="$(getReleaseVersionFromPipelineVersion "${PIPELINE_VERSION}" )"
 	echo "Chart Version is - ${chartVersion}"
 	modifyChartVersion "${chartVersion}" "otherservices/Chart.yaml"
@@ -828,7 +829,7 @@ function performGreenDeploymentOfConfigServer() {
 	local serviceFile="service.yml"
 	#local releaseVersion="$(getReleaseVersionFromPipelineVersion "${version}" )"
 	#echo "deployment version of config-server is ${releaseVersion}"
-	downloadHelm
+	downloadHelm "true"
 	local chartVersion="$(getReleaseVersionFromPipelineVersion "${PIPELINE_VERSION}" )"
 	echo "chartVersion is - ${chartVersion}"
 	modifyChartVersion "${chartVersion}" "config-server/Chart.yaml"
