@@ -12,7 +12,7 @@ __DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 downloadIstio
 cd istio-0.3.0
 #kubectl create clusterrolebinding cluster-admin-binding --clusterrole=cluster-admin --user=$(gcloud config get-value core/account)
-kubectl create clusterrolebinding cluster-admin-binding --clusterrole=cluster-admin -user=$(gcloud config get-value core/account)
+kubectl create clusterrolebinding cluster-admin-binding --clusterrole=cluster-admin --user=$(gcloud config get-value core/account)
 kubectl apply -f install/kubernetes/istio.yaml
 #verify istio installation
 kubectl get svc -n istio-system
