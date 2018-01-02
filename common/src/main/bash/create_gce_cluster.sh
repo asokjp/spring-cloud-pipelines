@@ -28,7 +28,7 @@ curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s htt
 #cp /etc/skel/.bashrc ~
 #ls -la ~/ | more
 #source ~/.bashrc
-gcloud init
+#gcloud init
 gcloud container clusters create test --zone us-east1-c --num-nodes 1 --machine-type n1-standard-4
 
 gcloud container clusters get-credentials test --zone us-east1-c --project kinetic-raceway-189410
