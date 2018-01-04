@@ -605,7 +605,7 @@ function prepareForE2eTests() {
 	local applicationPort
 	applicationPort="$(portFromKubernetes "${appName}")"
 	local applicationHost
-	applicationHost="$(applicationHost "${appName}")"
+	homapplicationHost="$(applicationHost "${appName}")"
 	export APPLICATION_URL="${applicationHost}:${applicationPort}"
 }
 
@@ -645,7 +645,7 @@ function waitForAppToStart() {
 	port="$(portFromKubernetes "${appName}")"
 	local applicationHost
 	#applicationHost="$(applicationHost "${appName}")"
-	applicationHost="$(ipAddressFromIngress "${2}-gateway")"
+	applicationHost="$(ipAddressFromIngress "${2}gateway")"
 	echo "application host is - ${applicationHost}" 
 	isAppRunning "${applicationHost}" "${appName}"
 }
@@ -667,7 +667,7 @@ function isAppRunning() {
 	local waitTime=5
 	local retries=50
 	local running=1
-	local healthEndpoint="health${appName}"
+	local healthEndpoint="${appName}health"
 	echo "Checking if app [${host} is running at [/${healthEndpoint}] endpoint"
 	for i in $(seq 1 "${retries}"); do
 		#curl -m 5 "${host}:${port}/${healthEndpoint}" && running=0 && break
