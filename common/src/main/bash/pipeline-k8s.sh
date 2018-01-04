@@ -620,6 +620,12 @@ function applicationHost() {
 	fi
 }
 
+function ipAddressFromIngress()
+{
+	local ingressName="${1}"
+	"${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" get ingress "${ingressName}" -o=yaml | grep -i ip: | awk '{print $3}'
+}
+
 function portFromKubernetes() {
 	local appName="${1}"
 	local jsonPath
@@ -638,10 +644,10 @@ function waitForAppToStart() {
 	local port
 	port="$(portFromKubernetes "${appName}")"
 	local applicationHost
-	applicationHost="$(applicationHost "${appName}")"
-	applicationHost="35.185.65.162"
+	#applicationHost="$(applicationHost "${appName}")"
+	applicationHost="$(ipAddressFromIngress "${2}-gateway")"
 	echo "application host is - ${applicationHost}" 
-	isAppRunning "${applicationHost}" "${port}"
+	isAppRunning "${applicationHost}" "${appName}"
 }
 
 function retrieveApplicationUrl() {
@@ -656,14 +662,16 @@ function retrieveApplicationUrl() {
 
 function isAppRunning() {
 	local host="${1}"
-	local port="${2}"
+	#local port="${2}"
+	local appName="${2}"
 	local waitTime=5
 	local retries=50
 	local running=1
-	local healthEndpoint="health"
-	echo "Checking if app [${host}:${port}] is running at [/${healthEndpoint}] endpoint"
+	local healthEndpoint="health${appName}"
+	echo "Checking if app [${host} is running at [/${healthEndpoint}] endpoint"
 	for i in $(seq 1 "${retries}"); do
-		curl -m 5 "${host}:${port}/${healthEndpoint}" && running=0 && break
+		#curl -m 5 "${host}:${port}/${healthEndpoint}" && running=0 && break
+		curl -m 5 "${host}/${healthEndpoint}" && running=0 && break
 		echo "Fail #$i/${retries}... will try again in [${waitTime}] seconds"
 		sleep "${waitTime}"
 	done
