@@ -424,15 +424,17 @@ function deployAndRestartAppWithNameForSmokeTests() {
 	local profiles="smoke,kubernetes"
 	local lowerCaseAppName
 	lowerCaseAppName=$(toLowerCase "${appName}")
-	local originalDeploymentFile="deployment.yml"
-	local originalServiceFile="service.yml"
+	#local originalDeploymentFile="deployment.yml"
+	#local originalServiceFile="service.yml"
+	local originalDeploymentFile="istiodeployment.yml"
 	local outputDirectory
 	outputDirectory="$(outputFolder)/k8s"
 	mkdir -p "${outputDirectory}"
 	cp "${originalDeploymentFile}" "${outputDirectory}"
-	cp "${originalServiceFile}" "${outputDirectory}"
-	local deploymentFile="${outputDirectory}/deployment.yml"
-	local serviceFile="${outputDirectory}/service.yml"
+	#cp "${originalServiceFile}" "${outputDirectory}"
+	#local deploymentFile="${outputDirectory}/deployment.yml"
+	local deploymentFile="${outputDirectory}/istiodeployment.yml"
+	#local serviceFile="${outputDirectory}/service.yml"
 	local systemProps
 	systemProps="-Dspring.profiles.active=${profiles} $(appSystemProps)"
 	substituteVariables "dockerOrg" "${DOCKER_REGISTRY_ORGANIZATION}" "${deploymentFile}"
@@ -441,11 +443,12 @@ function deployAndRestartAppWithNameForSmokeTests() {
 	substituteVariables "labelAppName" "${appName}" "${deploymentFile}"
 	substituteVariables "containerName" "${appName}" "${deploymentFile}"
 	substituteVariables "systemProps" "${systemProps}" "${deploymentFile}"
-	substituteVariables "appName" "${appName}" "${serviceFile}"
+	#substituteVariables "appName" "${appName}" "${serviceFile}"
 	deleteAppByFile "${deploymentFile}"
-	deleteAppByFile "${serviceFile}"
-	deployApp "${deploymentFile}"
-	deployApp "${serviceFile}"
+	#deleteAppByFile "${serviceFile}"
+	#deployApp "${deploymentFile}"
+	"${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" apply -f <(istioctl kube-inject -f "${deploymentFile}" --includeIPRanges=10.36.0.0/14  10.39.240.0/20)
+	#deployApp "${serviceFile}"
 	waitForAppToStart "${appName}"
 }
 
