@@ -447,6 +447,7 @@ function deployAndRestartAppWithNameForSmokeTests() {
 	deleteAppByFile "${deploymentFile}"
 	#deleteAppByFile "${serviceFile}"
 	#deployApp "${deploymentFile}"
+	downloadIstio
 	"${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" apply -f <(istioctl kube-inject -f "${deploymentFile}" --includeIPRanges=10.36.0.0/14  10.39.240.0/20)
 	#deployApp "${serviceFile}"
 	waitForAppToStart "${appName}"
