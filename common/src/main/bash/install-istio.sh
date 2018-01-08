@@ -10,7 +10,7 @@ __DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
  echo "No pipeline.sh found"
 
 downloadIstio
-cd istio-0.3.0
+cd istio-0.4.0
 #kubectl create clusterrolebinding cluster-admin-binding --clusterrole=cluster-admin --user=$(gcloud config get-value core/account)
 kubectl create clusterrolebinding cluster-admin-binding --clusterrole=cluster-admin --user=115964911880601849962
 kubectl apply -f install/kubernetes/istio.yaml

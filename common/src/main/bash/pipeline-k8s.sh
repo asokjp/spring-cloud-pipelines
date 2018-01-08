@@ -68,7 +68,7 @@ function downloadHelm() {
 function downloadIstio() {
 		echo "installing istio.."
 		curl -L https://git.io/getLatestIstio | sh -
-		export PATH="$PATH:$PWD/istio-0.3.0/bin"
+		export PATH="$PATH:$PWD/istio-0.4.0/bin"
 		echo "PATH is ${PATH}"
 }
 
