@@ -645,8 +645,9 @@ function portFromKubernetes() {
 
 function waitForAppToStart() {
 	local appName="${1}"
+	echo "application name is: ${appName}"
 	local port
-	port="$(portFromKubernetes "${appName}")"
+	#port="$(portFromKubernetes "${appName}")"
 	local applicationHost
 	#applicationHost="$(applicationHost "${appName}")"
 	applicationHost="$(ipAddressFromIngress "${appName}-gateway")"
