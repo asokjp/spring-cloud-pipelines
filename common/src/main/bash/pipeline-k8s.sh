@@ -653,7 +653,8 @@ function waitForAppToStart() {
 	#port="$(portFromKubernetes "${appName}")"
 	local applicationHost
 	#applicationHost="$(applicationHost "${appName}")"
-	applicationHost="$(ipAddressFromIngress "${appName}")"
+	#applicationHost="$(ipAddressFromIngress "${appName}")"
+	applicationHost="35.196.72.218"
 	echo "application host is - ${applicationHost}" 
 	isAppRunning "${applicationHost}" "${appName}"
 }
