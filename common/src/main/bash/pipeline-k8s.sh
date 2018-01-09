@@ -626,9 +626,9 @@ function applicationHost() {
 
 function ipAddressFromIngress()
 {
-	local ingressName="${1}-gateway"
+	local ingressName="${1}"
 	echo "ingressName is ${ingressName}"
-	"${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" get ingress "${ingressName}" -o=yaml | grep -i ip: | awk '{print $3}'
+	"${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" get ingress "${ingressName}-gateway" -o=yaml | grep -i ip: | awk '{print $3}'
 }
 
 function portFromKubernetes() {
