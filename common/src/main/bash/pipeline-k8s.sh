@@ -626,7 +626,7 @@ function applicationHost() {
 
 function ipAddressFromIngress()
 {
-	local ingressName="${1}"
+	local ingressName="${1}-gateway"
 	echo "ingressName is ${ingressName}"
 	"${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" get ingress "${ingressName}" -o=yaml | grep -i ip: | awk '{print $3}'
 }
