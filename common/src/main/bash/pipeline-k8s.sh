@@ -628,9 +628,9 @@ function ipAddressFromIngress()
 {
 	#local name="${1}"
 	#echo "name is ${name}"
-	#local ingressName="config-server-gateway"
+	local ingressName="config-server-gateway"
 	echo "ingressname is"
-	"${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" get ingress config-server-gateway -o=yaml | grep -i ip: | awk '{print $3}'
+	"${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" get ingress ${ingressName} -o=yaml | grep -i ip: | awk '{print $3}'
 }
 
 function portFromKubernetes() {
@@ -653,8 +653,7 @@ function waitForAppToStart() {
 	#port="$(portFromKubernetes "${appName}")"
 	local applicationHost
 	#applicationHost="$(applicationHost "${appName}")"
-	#applicationHost="$(ipAddressFromIngress "${appName}")"
-	applicationHost="35.196.72.218"
+	applicationHost="$(ipAddressFromIngress)"
 	echo "application host is - ${applicationHost}" 
 	isAppRunning "${applicationHost}" "${appName}"
 }
