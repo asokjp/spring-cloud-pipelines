@@ -664,7 +664,7 @@ function waitForAppToStart() {
 	#port="$(portFromKubernetes "${appName}")"
 	local applicationHost
 	#applicationHost="$(applicationHost "${appName}")"
-	kubectl get svc config-servergateway --namespace=sc-pipelines-test
+	kubectl get ingress config-servergateway --namespace=sc-pipelines-test
 	applicationHost="$(ipAddressFromIngress "${appName}")"
 	echo "application host is - ${applicationHost}" 
 	exit 1
