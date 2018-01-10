@@ -628,11 +628,10 @@ function ipAddressFromIngress()
 {
 	local name="${1}"
 	#echo "name is ${name}"
-	#local ingressName="config-servergateway"
+	local ingressName="config-servergateway"
 	
 	#echo "ingressname is"
-	#"${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" get ingress config-servergateway -o=yaml | grep -i ip: | awk '{print $3}'
-	
+	"${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" get ${ingressName} -o=yaml | grep -i ip: | awk '{print $3}'
 }
 
 function portFromKubernetes() {
