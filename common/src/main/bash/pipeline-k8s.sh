@@ -635,7 +635,7 @@ function ipAddressFromIngress()
 	#"${KUBECTL_BIN}"  --namespace="${PAAS_NAMESPACE}" get ingress $ingressName -o jsonpath="${jsonPath}"
 	local result
 	#result="$(kubectl --namespace=sc-pipelines-test get ingress config-servergateway)"
-	kubectl --context="${K8S_CONTEXT}" describe ingress config-servergateway --namespace=sc-pipelines-test -o=yaml
+	kubectl --context="${K8S_CONTEXT}" get ingress config-servergateway --namespace=sc-pipelines-test -o=yaml
 	#result="$("${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" get ingress $ingressName -o jsonpath="${jsonPath}""
 	#if [[ "${result}" != "" ]]; then
 	#	echo "${result}"
