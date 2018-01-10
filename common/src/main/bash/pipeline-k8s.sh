@@ -628,7 +628,7 @@ function ipAddressFromIngress()
 {
 	local name="${1}"
 	#echo "name is ${name}"
-	local ingressName="${name}gateway"
+	local ingressName="config-servergateway"
 	
 	#echo "ingressname is"
 	"${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" get ingress ${ingressName} -o=yaml | grep -i ip: | awk '{print $3}'
