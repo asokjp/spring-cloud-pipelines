@@ -9,7 +9,7 @@ String repos = binding.variables['REPOS'] ?:
 		 
 dsl.deliveryPipelineView("Infra-pipeline") {
 		allowPipelineStart()
-		pipelineInstances(5)
+		pipelineInstances(6)
 		showAggregatedPipeline(false)
 		columns(1)
 		updateInterval(5)

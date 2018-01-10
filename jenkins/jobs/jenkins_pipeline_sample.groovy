@@ -167,7 +167,7 @@ String projectNameForConfig = "config-server1-pipeline"
 //Starting of Config server
 	
 	dsl.job("${projectNameForConfig}-build") {
-		deliveryPipelineConfiguration('Build', 'Build and Upload of config-server')
+		deliveryPipelineConfiguration('Config-Server Build', 'Build and Upload of config-server')
 		triggers {
 			cron(cronValue)
 			githubPush()
@@ -243,7 +243,7 @@ String projectNameForConfig = "config-server1-pipeline"
 	if (apiCompatibilityStep) {
 
 		dsl.job("${projectNameForConfig}-build-api-check") {
-			deliveryPipelineConfiguration('Build', 'API compatibility check')
+			deliveryPipelineConfiguration('Config-Server Build', 'API compatibility check')
 			triggers {
 				cron(cronValue)
 				githubPush()
@@ -300,7 +300,7 @@ String projectNameForConfig = "config-server1-pipeline"
 	}
 
 	dsl.job("${projectNameForConfig}-test-env-deploy") {
-		deliveryPipelineConfiguration('Test', 'Deploy to test')
+		deliveryPipelineConfiguration('Config-Server Test', 'Deploy to test')
 		wrappers {
 			deliveryPipelineVersion('${ENV,var="PIPELINE_VERSION"}', true)
 			environmentVariables(defaults.defaultEnvVars)
@@ -365,7 +365,7 @@ String projectNameForConfig = "config-server1-pipeline"
 	}
 
 	dsl.job("${projectNameForConfig}-test-env-test") {
-		deliveryPipelineConfiguration('Test', 'Tests on test')
+		deliveryPipelineConfiguration('Config-Server Test', 'Tests on test')
 		wrappers {
 			deliveryPipelineVersion('${ENV,var="PIPELINE_VERSION"}', true)
 			environmentVariables(defaults.defaultEnvVars)
@@ -493,7 +493,7 @@ String projectNameForConfig = "config-server1-pipeline"
 		}
 
 		dsl.job("${projectNameForConfig}-test-env-rollback-test") {
-			deliveryPipelineConfiguration('Test', 'Tests on test latest prod version')
+			deliveryPipelineConfiguration('Config-Server Test', 'Tests on test latest prod version')
 			wrappers {
 				deliveryPipelineVersion('${ENV,var="PIPELINE_VERSION"}', true)
 				environmentVariables {
@@ -580,7 +580,7 @@ String projectNameForConfig = "config-server1-pipeline"
 
 	if (stageStep) {
 		dsl.job("${projectNameForConfig}-stage-env-deploy") {
-			deliveryPipelineConfiguration('Stage', 'Deploy to stage')
+			deliveryPipelineConfiguration('Config-Server Stage', 'Deploy to stage')
 			wrappers {
 				deliveryPipelineVersion('${ENV,var="PIPELINE_VERSION"}', true)
 				maskPasswords()
@@ -655,7 +655,7 @@ String projectNameForConfig = "config-server1-pipeline"
 		}
 
 		dsl.job("${projectNameForConfig}-stage-env-test") {
-			deliveryPipelineConfiguration('Stage', 'End to end tests on stage')
+			deliveryPipelineConfiguration('Config-Server Stage', 'End to end tests on stage')
 			wrappers {
 				deliveryPipelineVersion('${ENV,var="PIPELINE_VERSION"}', true)
 				environmentVariables {
@@ -720,7 +720,7 @@ String projectNameForConfig = "config-server1-pipeline"
 	}
 
 	dsl.job("${projectNameForConfig}-prod-env-deploy") {
-		deliveryPipelineConfiguration('Prod', 'Deploy to prod')
+		deliveryPipelineConfiguration('Config-Server Prod', 'Deploy to prod')
 		wrappers {
 			deliveryPipelineVersion('${ENV,var="PIPELINE_VERSION"}', true)
 			maskPasswords()
@@ -797,7 +797,7 @@ String projectNameForConfig = "config-server1-pipeline"
 	}
 
 	dsl.job("${projectNameForConfig}-prod-env-rollback") {
-		deliveryPipelineConfiguration('Prod', 'Rollback')
+		deliveryPipelineConfiguration('Config-Server Prod', 'Rollback')
 		wrappers {
 			deliveryPipelineVersion('${ENV,var="PIPELINE_VERSION"}', true)
 			maskPasswords()
@@ -843,7 +843,7 @@ String projectNameForConfig = "config-server1-pipeline"
 	}
 
 	dsl.job("${projectNameForConfig}-prod-env-complete") {
-		deliveryPipelineConfiguration('Prod', 'Complete switch over')
+		deliveryPipelineConfiguration('Config-Server Prod', 'Complete switch over')
 		wrappers {
 			deliveryPipelineVersion('${ENV,var="PIPELINE_VERSION"}', true)
 			maskPasswords()
