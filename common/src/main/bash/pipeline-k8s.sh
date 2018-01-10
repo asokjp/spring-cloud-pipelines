@@ -634,7 +634,7 @@ function ipAddressFromIngress()
 	#echo "ingressname is - ${K8S_CONTEXT} ${PAAS_NAMESPACE} ${ingressName} ${jsonPath}"
 	#"${KUBECTL_BIN}"  --namespace="${PAAS_NAMESPACE}" get ingress $ingressName -o jsonpath="${jsonPath}"
 	local result
-	result="$("${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" describe ingress $ingressName | grep 'Address:' | awk '{print $2}')"
+	result="$("${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" describe ingress $ingressName)"
 	#result="$("${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" get ingress $ingressName -o jsonpath="${jsonPath}""
 	if [[ "${result}" != "" ]]; then
 		echo "${result}"
@@ -665,6 +665,7 @@ function waitForAppToStart() {
 	#applicationHost="$(applicationHost "${appName}")"
 	applicationHost="$(ipAddressFromIngress "${appName}")"
 	echo "application host is - ${applicationHost}" 
+	exit 1
 	isAppRunning "${applicationHost}" "${appName}"
 }
 
