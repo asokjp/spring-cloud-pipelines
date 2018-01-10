@@ -624,26 +624,6 @@ function applicationHost() {
 	fi
 }
 
-function ipAddressFromIngress()
-{
-	local name="${1}"
-	#echo "name is ${name}"
-	local gateway="gateway"
-	local ingressName=$name$gateway
-	local jsonPath="{.status.loadBalancer.ingress[0].ip}"
-	#echo "ingressname is - ${K8S_CONTEXT} ${PAAS_NAMESPACE} ${ingressName} ${jsonPath}"
-	#"${KUBECTL_BIN}"  --namespace="${PAAS_NAMESPACE}" get ingress $ingressName -o jsonpath="${jsonPath}"
-	local result
-	result="$(kubectl describe  svc istio-ingress --namespace=istio-system | grep 'LoadBalancer Ingress:' | awk '{print $3}')"
-	
-	#result="$("${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" get ingress $ingressName -o jsonpath="${jsonPath}""
-	#if [[ "${result}" != "" ]]; then
-	#	echo "${result}"
-	#else
-	#	echo "false"
-	#fi
-}
-
 function portFromKubernetes() {
 	local appName="${1}"
 	local jsonPath
@@ -664,10 +644,8 @@ function waitForAppToStart() {
 	#port="$(portFromKubernetes "${appName}")"
 	local applicationHost
 	#applicationHost="$(applicationHost "${appName}")"
-	kubectl get ingress config-servergateway --namespace=sc-pipelines-test
 	applicationHost="$(kubectl describe  svc istio-ingress --namespace=istio-system | grep 'LoadBalancer Ingress:' | awk '{print $3}')"
 	echo "application host is - ${applicationHost}" 
-	exit 1
 	isAppRunning "${applicationHost}" "${appName}"
 }
 
