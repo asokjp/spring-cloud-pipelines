@@ -634,7 +634,7 @@ function ipAddressFromIngress()
 	#echo "ingressname is - ${K8S_CONTEXT} ${PAAS_NAMESPACE} ${ingressName} ${jsonPath}"
 	#"${KUBECTL_BIN}"  --namespace="${PAAS_NAMESPACE}" get ingress $ingressName -o jsonpath="${jsonPath}"
 	local result
-	result="$("${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" get ingress $ingressName -o jsonpath="${jsonPath}" --ignore-not-found=true)"
+	result="$("${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" get ingress $ingressName  --ignore-not-found=true)"
 	#result="$("${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" get ingress $ingressName -o jsonpath="${jsonPath}""
 	if [[ "${result}" != "" ]]; then
 		echo "${result}"
