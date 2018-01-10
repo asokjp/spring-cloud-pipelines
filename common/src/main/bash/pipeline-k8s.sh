@@ -631,8 +631,8 @@ function ipAddressFromIngress()
 	local gateway="gateway"
 	local ingressName=$name$gateway
 	local jsonPath="{.status.loadBalancer.ingress[0].ip}"
-	#echo "ingressname is - ${ingressName}"
-	"${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" get ingress $ingressName -o jsonpath="${jsonPath}"
+	echo "ingressname is - ${K8S_CONTEXT} ${PAAS_NAMESPACE} ${ingressName}"
+	#"${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" get ingress $ingressName -o jsonpath="${jsonPath}"
 }
 
 function portFromKubernetes() {
