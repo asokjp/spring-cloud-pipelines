@@ -631,7 +631,7 @@ function ipAddressFromIngress()
 	local gateway="gateway"
 	local ingressName=$name$gateway
 	#echo "ingressname is - ${ingressName}"
-	"${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" get ingress $ingressName -o=yaml | grep -i ip: | awk '{print $3}'
+	"${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" get ingress ${ingressName}" 
 }
 
 function portFromKubernetes() {
