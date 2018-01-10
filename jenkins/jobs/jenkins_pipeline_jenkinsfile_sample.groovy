@@ -9,7 +9,6 @@ Boolean gitUseSshKey= Boolean.parseBoolean(binding.variables["GIT_USE_SSH_KEY"] 
 // we're parsing the REPOS parameter to retrieve list of repos to build
 String repos = binding.variables["REPOS"] ?: [
 		"https://github.com/asokjp/claimant-service",
-		"https://github.com/asokjp/config-server1",
 		"https://github.com/asokjp/hello-world"
 	].join(",")
 List<String> parsedRepos = repos.split(",")
