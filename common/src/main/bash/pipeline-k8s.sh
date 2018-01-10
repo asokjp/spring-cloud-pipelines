@@ -635,7 +635,7 @@ function ipAddressFromIngress()
 	#"${KUBECTL_BIN}"  --namespace="${PAAS_NAMESPACE}" get ingress $ingressName -o jsonpath="${jsonPath}"
 	local result
 	#result="$(kubectl --namespace=sc-pipelines-test get ingress config-servergateway)"
-	kubectl --context="${K8S_CONTEXT}" get ingress config-servergateway --namespace=sc-pipelines-test -o=yaml
+	kubectl get svc istio-ingress --namespace=istio-system
 	#result="$("${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" get ingress $ingressName -o jsonpath="${jsonPath}""
 	#if [[ "${result}" != "" ]]; then
 	#	echo "${result}"
@@ -664,6 +664,7 @@ function waitForAppToStart() {
 	#port="$(portFromKubernetes "${appName}")"
 	local applicationHost
 	#applicationHost="$(applicationHost "${appName}")"
+	kubectl get svc config-servergateway --namespace=sc-pipelines-test
 	applicationHost="$(ipAddressFromIngress "${appName}")"
 	echo "application host is - ${applicationHost}" 
 	exit 1
