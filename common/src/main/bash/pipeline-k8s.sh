@@ -481,6 +481,7 @@ function deployAndRestartAppWithNameForE2ETests() {
 	#deleteAppByFile "${serviceFile}"
 	#deployApp "${deploymentFile}"
 	#deployApp "${serviceFile}"
+	downloadIstio
 	"${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" apply -f <(istioctl kube-inject -f "${deploymentFile}" --includeIPRanges=10.36.0.0/14  10.39.240.0/20)
 	waitForAppToStart "${appName}"
 }
@@ -899,15 +900,16 @@ function performGreenDeploymentOfTestedApplication() {
 	local lowerCaseAppName
 	lowerCaseAppName=$(toLowerCase "${appName}")
 	local profiles="kubernetes"
-	local originalDeploymentFile="deployment.yml"
-	local originalServiceFile="service.yml"
+	#local originalDeploymentFile="deployment.yml"
+	#local originalServiceFile="service.yml"
+	local originalDeploymentFile="istiodeployment.yml"
 	local outputDirectory
 	outputDirectory="$(outputFolder)/k8s"
 	mkdir -p "${outputDirectory}"
 	cp "${originalDeploymentFile}" "${outputDirectory}"
-	cp "${originalServiceFile}" "${outputDirectory}"
-	local deploymentFile="${outputDirectory}/deployment.yml"
-	local serviceFile="${outputDirectory}/service.yml"
+	#cp "${originalServiceFile}" "${outputDirectory}"
+	#local deploymentFile="${outputDirectory}/deployment.yml"
+	#local serviceFile="${outputDirectory}/service.yml"
 	local changedAppName
 	changedAppName="$(escapeValueForDns "${appName}-${PIPELINE_VERSION}")"
 	echo "Will name the application [${changedAppName}]"
@@ -929,14 +931,16 @@ function performGreenDeploymentOfTestedApplication() {
 	substituteVariables "appName" "${appName}" "${deploymentFile}"
 	substituteVariables "containerName" "${appName}" "${deploymentFile}"
 	substituteVariables "systemProps" "${systemProps}" "${deploymentFile}"
-	substituteVariables "appName" "${appName}" "${serviceFile}"
-	deployApp "${deploymentFile}"
+	#substituteVariables "appName" "${appName}" "${serviceFile}"
 	local serviceDeployed
 	serviceDeployed="$(objectDeployed "service" "${appName}")"
 	echo "Service already deployed? [${serviceDeployed}]"
-	if [[ "${serviceDeployed}" == "false" ]]; then
-		deployApp "${serviceFile}"
+	if [[ "${serviceDeployed}" == "true" ]]; then
+		kubectl delete -f "${deploymentFile}"
 	fi
+	downloadIstio
+	"${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" apply -f <(istioctl kube-inject -f "${deploymentFile}" --includeIPRanges=10.36.0.0/14  10.39.240.0/20)
+	
 	waitForAppToStart "${appName}"
 }
 
@@ -947,6 +951,26 @@ function escapeValueForDns() {
 	lowerCaseSed="$(toLowerCase "${sed}")"
 	echo "${lowerCaseSed}"
 }
+
+function rollbackConfigServerToPreviousVersion() {
+	local appName
+	appName="$(retrieveAppName)"
+	# Log in to CF to start deployment
+	logInToPaas
+	local changedAppName
+	changedAppName="$( dnsEscapedAppNameWithVersionSuffix "${appName}-${PIPELINE_VERSION}")"
+	# find the oldest version and remove it
+	local oldestDeployment
+	oldestDeployment="$(oldestDeployment "${appName}" "${changedAppName}")"
+	if [[ "${oldestDeployment}" != "" ]]; then
+		echo "Scaling the green instance to 0 instances. Only blue instance will be running"
+		"${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" scale deployment "${changedAppName}" --replicas=0  --kubeconfig="${KUBE_CONFIG_PATH}"
+	else
+		echo "Will not rollback to blue instance cause it's not there"
+		return 1
+	fi
+}
+
 
 function rollbackToPreviousVersion() {
 	# First rollback to config-server release train
