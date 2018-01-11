@@ -356,9 +356,10 @@ function substituteVariables() {
 	local substitution="${2}"
 	local fileName="${3}"
 	local escapedSubstitution
+	echo "fileName is: ${fileName}"
 	escapedSubstitution=$(escapeValueForSed "${substitution}")
 	echo "escapedSubstitution is ${escapedSubstitution}"
-	#echo "Changing [${variableName}] -> [${escapedSubstitution}] for file [${fileName}]"
+	echo "Changing [${variableName}] -> [${escapedSubstitution}] for file [${fileName}]"
 	if [[ "${SYSTEM}" == "darwin" ]]; then
 		sed -i "" "s/{{${variableName}}}/${escapedSubstitution}/" "${fileName}"
 	else
