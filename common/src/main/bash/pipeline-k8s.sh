@@ -897,7 +897,8 @@ function getReleaseVersionFromPipelineVersion() {
 
 
 function performGreenDeploymentOfTestedApplication() {
-	local appName="${1}"
+	local appName="$(retrieveAppName)"
+	echo "appName is $(retrieveAppName)"
 	local lowerCaseAppName
 	lowerCaseAppName=$(toLowerCase "${appName}")
 	local profiles="kubernetes"
