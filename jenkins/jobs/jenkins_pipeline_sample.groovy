@@ -767,7 +767,7 @@ String projectNameForConfig = "config-server1-pipeline"
 		rm -rf .git/tools && git clone -b ${toolsBranch} --single-branch ${toolsRepo} .git/tools 
 		""")
 		shell('''#!/bin/bash
-		chmod + x ${WORKSPACE}/.git/tools/common/src/main/bash/prod_deploy_configserver.sh && ${WORKSPACE}/.git/tools/common/src/main/bash/prod_deploy_configserver.sh 
+		chmod +x ${WORKSPACE}/.git/tools/common/src/main/bash/prod_deploy_configserver.sh && ${WORKSPACE}/.git/tools/common/src/main/bash/prod_deploy_configserver.sh 
 		''')
 		}
 		publishers {
