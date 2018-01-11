@@ -911,6 +911,7 @@ function performGreenDeploymentOfTestedApplication() {
 	#cp "${originalServiceFile}" "${outputDirectory}"
 	#local deploymentFile="${outputDirectory}/deployment.yml"
 	#local serviceFile="${outputDirectory}/service.yml"
+	local deploymentFile="${outputDirectory}/istiodeployment.yml"
 	local changedAppName
 	changedAppName="$(escapeValueForDns "${appName}-${PIPELINE_VERSION}")"
 	echo "Will name the application [${changedAppName}]"

@@ -837,7 +837,7 @@ String projectNameForConfig = "config-server1-pipeline"
 		rm -rf .git/tools && git clone -b ${toolsBranch} --single-branch ${toolsRepo} .git/tools 
 		""")
 			shell('''#!/bin/bash
-		${WORKSPACE}/.git/tools/common/src/main/bash/prod_rollback_configserver.sh
+		chmod +x ${WORKSPACE}/.git/tools/common/src/main/bash/prod_rollback_configserver.sh && ${WORKSPACE}/.git/tools/common/src/main/bash/prod_rollback_configserver.sh
 		''')
 		}
 	}
@@ -883,7 +883,7 @@ String projectNameForConfig = "config-server1-pipeline"
 		rm -rf .git/tools && git clone -b ${toolsBranch} --single-branch ${toolsRepo} .git/tools 
 		""")
 			shell('''#!/bin/bash
-		${WORKSPACE}/.git/tools/common/src/main/bash/prod_complete_configserver.sh
+		chmod +x ${WORKSPACE}/.git/tools/common/src/main/bash/prod_complete_configserver.sh && ${WORKSPACE}/.git/tools/common/src/main/bash/prod_complete_configserver.sh
 		''')
 		}
 	}	
