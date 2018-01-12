@@ -1512,7 +1512,7 @@ if(projectName.equalsIgnoreCase("prod-env-deploy-pipeline")) {
 		''')
 		}
 		publishers {
-			buildPipelineTrigger("install-istio") {
+			buildPipelineTrigger("install-istio-prod") {
 				parameters {
 					currentBuild()
 				}
