@@ -87,7 +87,7 @@ else {
 		showAvatars()
 		showChangeLog()
 		pipelines {
-			component("Deployment", "prod-env-deploy")
+			component("Deployment", "install-kubernetes-cluster-prod")
 		}
 		allowRebuild()
 		showDescription()
