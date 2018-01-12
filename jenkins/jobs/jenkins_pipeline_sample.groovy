@@ -53,6 +53,111 @@ String branchNameForInfra="master"
 String fullGitRepoForConfigserver="https://github.com/asokjp/config-server1"
 String branchNameForConfigserver="master"
 String projectNameForConfig = "config-server1-pipeline"
+//Starting of infra for production
+dsl.job("install-kubernetes-cluster-prod") {
+		deliveryPipelineConfiguration('Infra-prod', 'install kubernetes cluster for Prod')
+		wrappers {
+			maskPasswords()
+			environmentVariables(defaults.defaultEnvVars)
+			timestamps()
+			colorizeOutput()
+			maskPasswords()
+			timeout {
+				noActivity(300)
+				failBuild()
+				writeDescription('Build failed due to timeout after {0} minutes of inactivity')
+			}
+			credentialsBinding {
+				if (repoWithBinariesCredentials) usernamePassword('M2_SETTINGS_REPO_USERNAME', 'M2_SETTINGS_REPO_PASSWORD', repoWithBinariesCredentials)
+				if (dockerCredentials) usernamePassword('DOCKER_USERNAME', 'DOCKER_PASSWORD', dockerCredentials)
+			}
+		}
+		jdk(jdkVersion)
+		scm {
+			git {
+				remote {
+					name('origin')
+					url(fullGitRepoForInfra)
+					branch(branchNameForInfra)
+					credentials(gitUseSshKey ? gitSshCredentials : gitCredentials)
+				}
+				extensions {
+					wipeOutWorkspace()
+				}
+			}
+		}
+		configure { def project ->
+			// Adding user email and name here instead of global settings
+			project / 'scm' / 'extensions' << 'hudson.plugins.git.extensions.impl.UserIdentity' {
+				'email'(gitEmail)
+				'name'(gitName)
+			}
+		}
+		steps {
+			shell("""#!/bin/bash
+		rm -rf .git/tools && git clone -b ${toolsBranch} --single-branch ${toolsRepo} .git/tools 
+		""")
+			shell('''#!/bin/bash
+		chmod +x ${WORKSPACE}/.git/tools/common/src/main/bash/create_gce_cluster_prod.sh && ${WORKSPACE}/.git/tools/common/src/main/bash/create_gce_cluster_prod.sh
+		''')
+		}
+		publishers {
+			buildPipelineTrigger("install-istio-prod") {
+				parameters {
+					currentBuild()
+				}
+			}
+		}
+	}
+	dsl.job("install-istio-prod") {
+		deliveryPipelineConfiguration('Infra-prod', 'install istio & helm for prod')
+		wrappers {
+			maskPasswords()
+			environmentVariables(defaults.defaultEnvVars)
+			timestamps()
+			colorizeOutput()
+			maskPasswords()
+			timeout {
+				noActivity(300)
+				failBuild()
+				writeDescription('Build failed due to timeout after {0} minutes of inactivity')
+			}
+			credentialsBinding {
+				if (repoWithBinariesCredentials) usernamePassword('M2_SETTINGS_REPO_USERNAME', 'M2_SETTINGS_REPO_PASSWORD', repoWithBinariesCredentials)
+				if (dockerCredentials) usernamePassword('DOCKER_USERNAME', 'DOCKER_PASSWORD', dockerCredentials)
+			}
+		}
+		jdk(jdkVersion)
+		scm {
+			git {
+				remote {
+					name('origin')
+					url(fullGitRepoForInfra)
+					branch(branchNameForInfra)
+					credentials(gitUseSshKey ? gitSshCredentials : gitCredentials)
+				}
+				extensions {
+					wipeOutWorkspace()
+				}
+			}
+		}
+		configure { def project ->
+			// Adding user email and name here instead of global settings
+			project / 'scm' / 'extensions' << 'hudson.plugins.git.extensions.impl.UserIdentity' {
+				'email'(gitEmail)
+				'name'(gitName)
+			}
+		}
+		steps {
+			shell("""#!/bin/bash
+		rm -rf .git/tools && git clone -b ${toolsBranch} --single-branch ${toolsRepo} .git/tools 
+		""")
+			shell('''#!/bin/bash
+		chmod +x ${WORKSPACE}/.git/tools/common/src/main/bash/install-istio.sh && ${WORKSPACE}/.git/tools/common/src/main/bash/install-istio.sh
+		''')
+		}
+	}		 
+//End of infra for production
 	dsl.job("install-kubernetes-cluster") {
 		deliveryPipelineConfiguration('Infra', 'install kubernetes cluster')
 		wrappers {
