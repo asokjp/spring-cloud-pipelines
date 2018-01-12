@@ -744,7 +744,7 @@ function performGreenDeployment() {
 	logInToPaas
 
 	# deploy app
-	performGreenDeploymentOfConfigServer
+	#performGreenDeploymentOfConfigServer
 	performGreenDeploymentOfOtherServices
 	#add the changes to git staging area for pushing to remote repository
 	git add releasetrain.yml
@@ -978,22 +978,23 @@ function rollbackConfigServerToPreviousVersion() {
 function rollbackToPreviousVersion() {
 	# First rollback to config-server release train
 	#Get latest deleted version for config server
-	local latestDeletedConfigServerRelease="$(getDeletedGreenInstance "config-server" )"
+	#Commenting config server part
+	#local latestDeletedConfigServerRelease="$(getDeletedGreenInstance "config-server" )"
 	
-	echo "latestDeletedConfigServerRelease is - ${latestDeletedConfigServerRelease}"
-	if [[ "${latestDeletedConfigServerRelease}" != "" ]]; then
+	#echo "latestDeletedConfigServerRelease is - ${latestDeletedConfigServerRelease}"
+	#if [[ "${latestDeletedConfigServerRelease}" != "" ]]; then
 		#First rollback
-		echo "Rolling back config server release"
-		helm rollback ${latestDeletedConfigServerRelease} 1
+	#	echo "Rolling back config server release"
+	#	helm rollback ${latestDeletedConfigServerRelease} 1
 		# delete current version
-		local configserverRelease=$(grep 'config-server-release:' releasetrain.yml | awk '{ print $2}')
-		echo "current release of config sever is - ${configserverRelease}"
-		if [[ "${configserverRelease}" != "" ]]; then
-			helm delete ${configserverRelease}
-		fi
-	else
-		echo "Nothing to roll back for config-server"
-	fi
+	#	local configserverRelease=$(grep 'config-server-release:' releasetrain.yml | awk '{ print $2}')
+	#	echo "current release of config sever is - ${configserverRelease}"
+	#	if [[ "${configserverRelease}" != "" ]]; then
+	#		helm delete ${configserverRelease}
+	#	fi
+	#else
+	#	echo "Nothing to roll back for config-server"
+	#fi
 	# Next roll back  of otherservices
 	local latestDeletedOtherServiceRelease="$(getDeletedGreenInstance "otherservices" )"
 	
@@ -1134,6 +1135,7 @@ function getBlueInstanceRelease() {
 
 function deleteBlueInstances() {
 	# first delete config-server
+	# commenting config server
 	local configserverRelease=$(grep 'config-server-release:' releasetrain.yml | awk '{ print $2}')
 	echo "configserverRelease is ${configserverRelease}"
 	local previousConfigServerRelease="$(getBlueInstanceRelease "${configserverRelease}" "config-server" )"
