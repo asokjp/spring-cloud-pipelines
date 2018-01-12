@@ -7,7 +7,29 @@ String repos = binding.variables['REPOS'] ?:
 		['https://github.com/asokjp/claimant-service',
 		 'https://github.com/asokjp/hello-world','https://github.com/asokjp/prod-env-deploy'].join(',')
 		 
-dsl.deliveryPipelineView("Infra-pipeline") {
+
+	dsl.deliveryPipelineView("Infra-prod-pipeline") {
+		allowPipelineStart()
+		pipelineInstances(6)
+		showAggregatedPipeline(false)
+		columns(1)
+		updateInterval(5)
+		enableManualTriggers()
+		showAvatars()
+		showChangeLog()
+		pipelines {
+			component("Infra-prod", "install-kubernetes-cluster-prod")
+		}
+		allowRebuild()
+		showDescription()
+		showPromotions()
+		showTotalBuildTime()
+		configure {
+			(it / 'showTestResults').setValue(true)
+			(it / 'pagingEnabled').setValue(true)
+		}	
+}	 
+	dsl.deliveryPipelineView("Infra-pipeline") {
 		allowPipelineStart()
 		pipelineInstances(6)
 		showAggregatedPipeline(false)
