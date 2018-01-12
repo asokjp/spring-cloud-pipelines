@@ -109,7 +109,7 @@ else {
 		showAvatars()
 		showChangeLog()
 		pipelines {
-			component("Deployment", "install-kubernetes-cluster-prod")
+			component("Deployment", "prod-env-deploy")
 		}
 		allowRebuild()
 		showDescription()
