@@ -898,6 +898,7 @@ function getReleaseVersionFromPipelineVersion() {
 
 
 function performGreenDeploymentOfTestedApplication() {
+	gcloud container clusters get-credentials prod --zone us-east1-c --project kinetic-raceway-189410
 	local appName="$(retrieveAppName)"
 	echo "appName is $(retrieveAppName)"
 	local lowerCaseAppName
@@ -957,6 +958,7 @@ function escapeValueForDns() {
 }
 
 function rollbackConfigServerToPreviousVersion() {
+	gcloud container clusters get-credentials prod --zone us-east1-c --project kinetic-raceway-189410
 	local appName
 	appName="$(retrieveAppName)"
 	# Log in to CF to start deployment
@@ -1160,6 +1162,7 @@ function deleteBlueInstances() {
 }
 
 function deleteBlueInstance() {
+	gcloud container clusters get-credentials prod --zone us-east1-c --project kinetic-raceway-189410
 	local appName
 	appName="$(retrieveAppName)"
 	# Log in to CF to start deployment
