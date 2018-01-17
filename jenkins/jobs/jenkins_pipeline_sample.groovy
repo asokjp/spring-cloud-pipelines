@@ -156,6 +156,25 @@ dsl.job("install-kubernetes-cluster-prod") {
 		chmod +x ${WORKSPACE}/.git/tools/common/src/main/bash/install-istio.sh && ${WORKSPACE}/.git/tools/common/src/main/bash/install-istio.sh
 		''')
 		}
+		publishers {
+			archiveJunit(testReports)
+			String nextJob = "${projectNameForConfig}-prod-env-deploy"
+			if (autoProd) {
+				downstreamParameterized {
+					trigger(nextJob) {
+						parameters {
+							currentBuild()
+						}
+					}
+				}
+			} else {
+				buildPipelineTrigger(nextJob) {
+					parameters {
+						currentBuild()
+					}
+				}
+			}
+		}
 	}
 	dsl.job("${projectNameForConfig}-prod-env-deploy") {
 		deliveryPipelineConfiguration('Config-Server-Prod', 'Deploy to prod')
@@ -323,25 +342,6 @@ dsl.job("install-kubernetes-cluster-prod") {
 			shell('''#!/bin/bash
 		chmod +x ${WORKSPACE}/.git/tools/common/src/main/bash/prod_complete_configserver.sh && ${WORKSPACE}/.git/tools/common/src/main/bash/prod_complete_configserver.sh
 		''')
-		}
-		publishers {
-			archiveJunit(testReports)
-			String nextJob = "${projectNameForConfig}-prod-env-deploy"
-			if (autoProd) {
-				downstreamParameterized {
-					trigger(nextJob) {
-						parameters {
-							currentBuild()
-						}
-					}
-				}
-			} else {
-				buildPipelineTrigger(nextJob) {
-					parameters {
-						currentBuild()
-					}
-				}
-			}
 		}
 	}	
 	
