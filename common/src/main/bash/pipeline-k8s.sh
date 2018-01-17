@@ -798,6 +798,7 @@ function performGreenDeploymentOfOtherServices {
 			deployApp "${ingressFile}"
 		fi
 	downloadHelm "false"
+	echo "download option for helm is false"
 	local chartVersion="$(getReleaseVersionFromPipelineVersion "${PIPELINE_VERSION}" )"
 	echo "Chart Version is - ${chartVersion}"
 	modifyChartVersion "${chartVersion}" "otherservices/Chart.yaml"
