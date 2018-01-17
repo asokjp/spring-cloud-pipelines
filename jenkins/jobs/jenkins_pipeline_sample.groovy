@@ -156,7 +156,195 @@ dsl.job("install-kubernetes-cluster-prod") {
 		chmod +x ${WORKSPACE}/.git/tools/common/src/main/bash/install-istio.sh && ${WORKSPACE}/.git/tools/common/src/main/bash/install-istio.sh
 		''')
 		}
-	}		 
+	}
+	dsl.job("${projectNameForConfig}-prod-env-deploy") {
+		deliveryPipelineConfiguration('Config-Server-Prod', 'Deploy to prod')
+		wrappers {
+			deliveryPipelineVersion('${ENV,var="PIPELINE_VERSION"}', true)
+			maskPasswords()
+			environmentVariables(defaults.defaultEnvVars)
+			credentialsBinding {
+				// remove::start[CF]
+				if (cfProdCredentialId) usernamePassword('PAAS_PROD_USERNAME', 'PAAS_PROD_PASSWORD', cfProdCredentialId)
+				// remove::end[CF]
+				// remove::start[K8S]
+				if (k8sProdTokenCredentialId) string("TOKEN", k8sProdTokenCredentialId)
+				// remove::end[K8S]
+			}
+			timestamps()
+			colorizeOutput()
+			maskPasswords()
+			timeout {
+				noActivity(300)
+				failBuild()
+				writeDescription('Build failed due to timeout after {0} minutes of inactivity')
+			}
+		}
+		scm {
+			git {
+				remote {
+					name('origin')
+					url(fullGitRepoForConfigserver)
+					branch('dev/${PIPELINE_VERSION}')
+					credentials(gitUseSshKey ? gitSshCredentials : gitCredentials)
+				}
+				extensions {
+					wipeOutWorkspace()
+				}
+			}
+		}
+		configure { def project ->
+			// Adding user email and name here instead of global settings
+			project / 'scm' / 'extensions' << 'hudson.plugins.git.extensions.impl.UserIdentity' {
+				'email'(gitEmail)
+				'name'(gitName)
+			}
+		}
+		steps {
+			shell("""#!/bin/bash
+		rm -rf .git/tools && git clone -b ${toolsBranch} --single-branch ${toolsRepo} .git/tools 
+		""")
+		shell('''#!/bin/bash
+		chmod +x ${WORKSPACE}/.git/tools/common/src/main/bash/prod_deploy_configserver.sh && ${WORKSPACE}/.git/tools/common/src/main/bash/prod_deploy_configserver.sh 
+		''')
+		}
+		publishers {
+			// remove::start[K8S]
+			archiveArtifacts {
+				pattern("**/build/**/k8s/*.yml")
+				pattern("**/target/**/k8s/*.yml")
+				// remove::start[CF]
+				allowEmpty()
+				// remove::end[CF]
+			}
+			// end::start[K8S]
+			buildPipelineTrigger("${projectNameForConfig}-prod-env-complete,${projectNameForConfig}-prod-env-rollback") {
+				parameters {
+					currentBuild()
+				}
+			}
+			git {
+				forcePush(true)
+				pushOnlyIfSuccess()
+				tag('origin', "prod/\${PIPELINE_VERSION}") {
+					create()
+					update()
+				}
+			}
+		}
+	}
+
+	dsl.job("${projectNameForConfig}-prod-env-rollback") {
+		deliveryPipelineConfiguration('Config-Server-Prod', 'Rollback')
+		wrappers {
+			deliveryPipelineVersion('${ENV,var="PIPELINE_VERSION"}', true)
+			maskPasswords()
+			environmentVariables(defaults.defaultEnvVars)
+			credentialsBinding {
+				// remove::start[CF]
+				if (cfProdCredentialId) usernamePassword('PAAS_PROD_USERNAME', 'PAAS_PROD_PASSWORD', cfProdCredentialId)
+				// remove::end[CF]
+				// remove::start[K8S]
+				if(k8sTestTokenCredentialId) string("TOKEN", k8sTestTokenCredentialId)
+				// remove::end[K8S]
+			}
+			timestamps()
+			colorizeOutput()
+			maskPasswords()
+			timeout {
+				noActivity(300)
+				failBuild()
+				writeDescription('Build failed due to timeout after {0} minutes of inactivity')
+			}
+		}
+		scm {
+			git {
+				remote {
+					name('origin')
+					url(fullGitRepoForConfigserver)
+					branch('dev/${PIPELINE_VERSION}')
+					credentials(gitUseSshKey ? gitSshCredentials : gitCredentials)
+				}
+				extensions {
+					wipeOutWorkspace()
+				}
+			}
+		}
+		steps {
+			shell("""#!/bin/bash
+		rm -rf .git/tools && git clone -b ${toolsBranch} --single-branch ${toolsRepo} .git/tools 
+		""")
+			shell('''#!/bin/bash
+		chmod +x ${WORKSPACE}/.git/tools/common/src/main/bash/prod_rollback_configserver.sh && ${WORKSPACE}/.git/tools/common/src/main/bash/prod_rollback_configserver.sh
+		''')
+		}
+	}
+
+	dsl.job("${projectNameForConfig}-prod-env-complete") {
+		deliveryPipelineConfiguration('Config-Server-Prod', 'Complete switch over')
+		wrappers {
+			deliveryPipelineVersion('${ENV,var="PIPELINE_VERSION"}', true)
+			maskPasswords()
+			environmentVariables(defaults.defaultEnvVars)
+			credentialsBinding {
+				// remove::start[CF]
+				if (cfProdCredentialId) usernamePassword('PAAS_PROD_USERNAME', 'PAAS_PROD_PASSWORD', cfProdCredentialId)
+				// remove::end[CF]
+				// remove::start[K8S]
+				if(k8sTestTokenCredentialId) string("TOKEN", k8sTestTokenCredentialId)
+				// remove::end[K8S]
+			}
+			timestamps()
+			colorizeOutput()
+			maskPasswords()
+			timeout {
+				noActivity(300)
+				failBuild()
+				writeDescription('Build failed due to timeout after {0} minutes of inactivity')
+			}
+		}
+		scm {
+			git {
+				remote {
+					name('origin')
+					url(fullGitRepoForConfigserver)
+					branch('dev/${PIPELINE_VERSION}')
+					credentials(gitUseSshKey ? gitSshCredentials : gitCredentials)
+				}
+				extensions {
+					wipeOutWorkspace()
+				}
+			}
+		}
+		steps {
+			shell("""#!/bin/bash
+		rm -rf .git/tools && git clone -b ${toolsBranch} --single-branch ${toolsRepo} .git/tools 
+		""")
+			shell('''#!/bin/bash
+		chmod +x ${WORKSPACE}/.git/tools/common/src/main/bash/prod_complete_configserver.sh && ${WORKSPACE}/.git/tools/common/src/main/bash/prod_complete_configserver.sh
+		''')
+		}
+		publishers {
+			archiveJunit(testReports)
+			String nextJob = "${projectNameForConfig}-prod-env-deploy"
+			if (autoProd) {
+				downstreamParameterized {
+					trigger(nextJob) {
+						parameters {
+							currentBuild()
+						}
+					}
+				}
+			} else {
+				buildPipelineTrigger(nextJob) {
+					parameters {
+						currentBuild()
+					}
+				}
+			}
+		}
+	}	
+	
 //End of infra for production
 	dsl.job("install-kubernetes-cluster") {
 		deliveryPipelineConfiguration('Infra', 'install kubernetes cluster')
@@ -802,197 +990,9 @@ dsl.job("install-kubernetes-cluster-prod") {
 		${WORKSPACE}/.git/tools/common/src/main/bash/stage_e2e.sh
 		''')
 			}
-			publishers {
-				archiveJunit(testReports)
-				String nextJob = "${projectNameForConfig}-prod-env-deploy"
-				if (autoProd) {
-					downstreamParameterized {
-						trigger(nextJob) {
-							parameters {
-								currentBuild()
-							}
-						}
-					}
-				} else {
-					buildPipelineTrigger(nextJob) {
-						parameters {
-							currentBuild()
-						}
-					}
-				}
-			}
 		}
 	}
 
-	dsl.job("${projectNameForConfig}-prod-env-deploy") {
-		deliveryPipelineConfiguration('Config-Server-Prod', 'Deploy to prod')
-		wrappers {
-			deliveryPipelineVersion('${ENV,var="PIPELINE_VERSION"}', true)
-			maskPasswords()
-			environmentVariables(defaults.defaultEnvVars)
-			credentialsBinding {
-				// remove::start[CF]
-				if (cfProdCredentialId) usernamePassword('PAAS_PROD_USERNAME', 'PAAS_PROD_PASSWORD', cfProdCredentialId)
-				// remove::end[CF]
-				// remove::start[K8S]
-				if (k8sProdTokenCredentialId) string("TOKEN", k8sProdTokenCredentialId)
-				// remove::end[K8S]
-			}
-			timestamps()
-			colorizeOutput()
-			maskPasswords()
-			timeout {
-				noActivity(300)
-				failBuild()
-				writeDescription('Build failed due to timeout after {0} minutes of inactivity')
-			}
-		}
-		scm {
-			git {
-				remote {
-					name('origin')
-					url(fullGitRepoForConfigserver)
-					branch('dev/${PIPELINE_VERSION}')
-					credentials(gitUseSshKey ? gitSshCredentials : gitCredentials)
-				}
-				extensions {
-					wipeOutWorkspace()
-				}
-			}
-		}
-		configure { def project ->
-			// Adding user email and name here instead of global settings
-			project / 'scm' / 'extensions' << 'hudson.plugins.git.extensions.impl.UserIdentity' {
-				'email'(gitEmail)
-				'name'(gitName)
-			}
-		}
-		steps {
-			shell("""#!/bin/bash
-		rm -rf .git/tools && git clone -b ${toolsBranch} --single-branch ${toolsRepo} .git/tools 
-		""")
-		shell('''#!/bin/bash
-		chmod +x ${WORKSPACE}/.git/tools/common/src/main/bash/prod_deploy_configserver.sh && ${WORKSPACE}/.git/tools/common/src/main/bash/prod_deploy_configserver.sh 
-		''')
-		}
-		publishers {
-			// remove::start[K8S]
-			archiveArtifacts {
-				pattern("**/build/**/k8s/*.yml")
-				pattern("**/target/**/k8s/*.yml")
-				// remove::start[CF]
-				allowEmpty()
-				// remove::end[CF]
-			}
-			// end::start[K8S]
-			buildPipelineTrigger("${projectNameForConfig}-prod-env-complete,${projectNameForConfig}-prod-env-rollback") {
-				parameters {
-					currentBuild()
-				}
-			}
-			git {
-				forcePush(true)
-				pushOnlyIfSuccess()
-				tag('origin', "prod/\${PIPELINE_VERSION}") {
-					create()
-					update()
-				}
-			}
-		}
-	}
-
-	dsl.job("${projectNameForConfig}-prod-env-rollback") {
-		deliveryPipelineConfiguration('Config-Server-Prod', 'Rollback')
-		wrappers {
-			deliveryPipelineVersion('${ENV,var="PIPELINE_VERSION"}', true)
-			maskPasswords()
-			environmentVariables(defaults.defaultEnvVars)
-			credentialsBinding {
-				// remove::start[CF]
-				if (cfProdCredentialId) usernamePassword('PAAS_PROD_USERNAME', 'PAAS_PROD_PASSWORD', cfProdCredentialId)
-				// remove::end[CF]
-				// remove::start[K8S]
-				if(k8sTestTokenCredentialId) string("TOKEN", k8sTestTokenCredentialId)
-				// remove::end[K8S]
-			}
-			timestamps()
-			colorizeOutput()
-			maskPasswords()
-			timeout {
-				noActivity(300)
-				failBuild()
-				writeDescription('Build failed due to timeout after {0} minutes of inactivity')
-			}
-		}
-		scm {
-			git {
-				remote {
-					name('origin')
-					url(fullGitRepoForConfigserver)
-					branch('dev/${PIPELINE_VERSION}')
-					credentials(gitUseSshKey ? gitSshCredentials : gitCredentials)
-				}
-				extensions {
-					wipeOutWorkspace()
-				}
-			}
-		}
-		steps {
-			shell("""#!/bin/bash
-		rm -rf .git/tools && git clone -b ${toolsBranch} --single-branch ${toolsRepo} .git/tools 
-		""")
-			shell('''#!/bin/bash
-		chmod +x ${WORKSPACE}/.git/tools/common/src/main/bash/prod_rollback_configserver.sh && ${WORKSPACE}/.git/tools/common/src/main/bash/prod_rollback_configserver.sh
-		''')
-		}
-	}
-
-	dsl.job("${projectNameForConfig}-prod-env-complete") {
-		deliveryPipelineConfiguration('Config-Server-Prod', 'Complete switch over')
-		wrappers {
-			deliveryPipelineVersion('${ENV,var="PIPELINE_VERSION"}', true)
-			maskPasswords()
-			environmentVariables(defaults.defaultEnvVars)
-			credentialsBinding {
-				// remove::start[CF]
-				if (cfProdCredentialId) usernamePassword('PAAS_PROD_USERNAME', 'PAAS_PROD_PASSWORD', cfProdCredentialId)
-				// remove::end[CF]
-				// remove::start[K8S]
-				if(k8sTestTokenCredentialId) string("TOKEN", k8sTestTokenCredentialId)
-				// remove::end[K8S]
-			}
-			timestamps()
-			colorizeOutput()
-			maskPasswords()
-			timeout {
-				noActivity(300)
-				failBuild()
-				writeDescription('Build failed due to timeout after {0} minutes of inactivity')
-			}
-		}
-		scm {
-			git {
-				remote {
-					name('origin')
-					url(fullGitRepoForConfigserver)
-					branch('dev/${PIPELINE_VERSION}')
-					credentials(gitUseSshKey ? gitSshCredentials : gitCredentials)
-				}
-				extensions {
-					wipeOutWorkspace()
-				}
-			}
-		}
-		steps {
-			shell("""#!/bin/bash
-		rm -rf .git/tools && git clone -b ${toolsBranch} --single-branch ${toolsRepo} .git/tools 
-		""")
-			shell('''#!/bin/bash
-		chmod +x ${WORKSPACE}/.git/tools/common/src/main/bash/prod_complete_configserver.sh && ${WORKSPACE}/.git/tools/common/src/main/bash/prod_complete_configserver.sh
-		''')
-		}
-	}	
-	
 //End of config server
 List<String> parsedRepos = repos.split(",")
 parsedRepos.each {
