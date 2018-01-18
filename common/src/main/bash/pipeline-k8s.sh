@@ -110,6 +110,7 @@ function testDeploy() {
 	appName=$(retrieveAppName)
 	# Log in to PaaS to start deployment
 	logInToPaas
+	gcloud container clusters get-credentials test --zone us-east1-c --project kinetic-raceway-189410
 	deployServices
 	# deploy app
 	deployAndRestartAppWithNameForSmokeTests "${appName}" "${PIPELINE_VERSION}"
