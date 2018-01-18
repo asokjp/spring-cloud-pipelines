@@ -793,7 +793,7 @@ function performGreenDeploymentOfOtherServices {
 	#delete ingress
 	local ingressDeployed
 	local ingressFile="gatewayingress.yml"
-	ingressDeployed="$(objectDeployed "ingress" gateway )"
+	ingressDeployed="$(objectDeployed "ingress" "gateway" )"
 		echo "ingress gateway already deployed? [${ingressDeployed}]"
 		if [[ "${ingressDeployed}" == "false" ]]; then
 			deployApp "${ingressFile}"
