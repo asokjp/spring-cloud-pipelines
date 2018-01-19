@@ -299,7 +299,9 @@ function deployRabbitMq() {
 
 function deployApp() {
 	local fileName="${1}"
+	echo "fileName is ${fileName}"
 	"${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" create -f "${fileName}"
+	echo "deployed sucessfully"
 }
 
 function replaceApp() {
@@ -797,6 +799,7 @@ function performGreenDeploymentOfOtherServices {
 	ingressDeployed="$(objectDeployed "ingress" "gateway" )"
 		echo "ingress gateway already deployed? [${ingressDeployed}]"
 		if [[ "${ingressDeployed}" == "false" ]]; then
+			echo "deploying ingress in production"
 			deployApp "${ingressFile}"
 		fi
 	downloadHelm "false"
