@@ -716,6 +716,7 @@ function label() {
 function objectDeployed() {
 	local appType="${1}"
 	local appName="${2}"
+	echo "app name to be checked is ${appName}"
 	local result
 	result="$("${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" get "${appType}" "${appName}" --ignore-not-found=true)"
 	if [[ "${result}" != "" ]]; then
