@@ -811,7 +811,7 @@ function performGreenDeploymentOfOtherServices {
 	#local releaseNo="${chartVersion}" | tr '_' '-'
 	local releaseName="otherservices-${chartVersion}"
 	echo "release name for config-server is ${chartVersion}"
-	#helm install -n ${releaseName} ${helmoptions} --namespace  "${PAAS_NAMESPACE}" ./otherservices
+	helm install -n ${releaseName} ${helmoptions} --namespace  "${PAAS_NAMESPACE}" ./otherservices
 	# now tagging each project to production
 	for j in "${ADDR[@]}"; do
 	 echo "repo is - $j"
