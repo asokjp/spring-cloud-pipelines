@@ -776,8 +776,8 @@ function performGreenDeploymentOfOtherServices {
 		#echo "deployment version of ${projectName} is ${releaseVersion}"
 		local serviceDeployed
 		serviceDeployed="$(objectDeployed "service" "${projectName}")"
-		#echo "Service already deployed? [${serviceDeployed}]"
-		if [[ "${serviceDeployed}" == "false" ]]; then
+		echo "Service already deployed? [${serviceDeployed}]"
+		if [[ "${serviceDeployed}" == false ]]; then
 			git config --global user.email "asok_jp@yahoo.com"
 			git config --global user.name "asokjp"
 			git clone https://asokjp:Lalithamma1@github.com/asokjp/"${projectName}"  --branch dev/"${version}"
@@ -798,8 +798,8 @@ function performGreenDeploymentOfOtherServices {
 	local ingressDeployed
 	local ingressFile="gatewayingress.yml"
 	ingressDeployed="$(objectDeployed "ingress" "gateway" )"
-		#echo "ingress gateway already deployed? ${ingressDeployed}"
-		if [[ "${ingressDeployed}" == "false" ]]; then
+		echo "ingress gateway already deployed? ${ingressDeployed}"
+		if [[ "${ingressDeployed}" == false ]]; then
 			echo "deploying ingress in production"
 			deployApp "${ingressFile}"
 		fi
@@ -812,7 +812,7 @@ function performGreenDeploymentOfOtherServices {
 	#local releaseNo="${chartVersion}" | tr '_' '-'
 	local releaseName="otherservices-${chartVersion}"
 	echo "release name for config-server is ${chartVersion}"
-	helm install -n ${releaseName} ${helmoptions} --namespace  "${PAAS_NAMESPACE}" ./otherservices
+	#helm install -n ${releaseName} ${helmoptions} --namespace  "${PAAS_NAMESPACE}" ./otherservices
 	# now tagging each project to production
 	for j in "${ADDR[@]}"; do
 	 echo "repo is - $j"
