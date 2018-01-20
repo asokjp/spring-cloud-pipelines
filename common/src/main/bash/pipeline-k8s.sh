@@ -825,9 +825,9 @@ function performGreenDeploymentOfOtherServices {
 		git config --global user.name "asokjp"
 		git clone https://asokjp:Lalithamma1@github.com/asokjp/"${projectName}"  --branch dev/"${version}"
 		cd "${projectName}"
-		#git tag prod/"${version}"
-		#git push origin prod/"${version}" --force
-		#cd ..
+		git tag prod/"${version}"
+		git push origin prod/"${version}" --force
+		cd ..
 		rm -rf "${projectName}"
 	else
 		echo "false"
