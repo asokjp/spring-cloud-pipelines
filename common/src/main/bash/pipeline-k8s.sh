@@ -718,7 +718,6 @@ function label() {
 function objectDeployed() {
 	local appType="${1}"
 	local appName="${2}"
-	echo "app name to be checked is ${appName}"
 	local result
 	result="$("${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" get "${appType}" "${appName}" --ignore-not-found=true)"
 	if [[ "${result}" != "" ]]; then
@@ -777,7 +776,7 @@ function performGreenDeploymentOfOtherServices {
 		local serviceDeployed
 		serviceDeployed="$(objectDeployed "service" "${projectName}")"
 		echo "Service already deployed? ${serviceDeployed}"
-		if [[ "${serviceDeployed}" != "false" ]]; then
+		if [[ "${serviceDeployed}" == "false" ]]; then
 			git config --global user.email "asok_jp@yahoo.com"
 			git config --global user.name "asokjp"
 			git clone https://asokjp:Lalithamma1@github.com/asokjp/"${projectName}"  --branch dev/"${version}"
@@ -799,7 +798,7 @@ function performGreenDeploymentOfOtherServices {
 	local ingressFile="gatewayingress.yaml"
 	ingressDeployed="$(objectDeployed "ingress" "gateway" )"
 		echo "ingress gateway already deployed? ${ingressDeployed}"
-		if [[ "${ingressDeployed}" != "false" ]]; then
+		if [[ "${ingressDeployed}" == "false" ]]; then
 			echo "deploying ingress in production"
 			deployApp "${ingressFile}"
 		fi
