@@ -755,6 +755,7 @@ function performGreenDeployment() {
 }
 
 function performGreenDeploymentOfOtherServices {
+	downloadIstio
 	local helmoptions=""
 	local serviceFile="service.yml"
 	git config --global user.email "asok_jp@yahoo.com"
@@ -783,7 +784,8 @@ function performGreenDeploymentOfOtherServices {
 			cd "${projectName}"
 			substituteVariables "appName" "${projectName}" "${serviceFile}"		
 			echo "deploying service file ${serviceFile}"
-			deployApp "${serviceFile}"
+			#deployApp "${serviceFile}"
+			kubectl --namespace=sc-pipelines-prod apply -f <(istioctl kube-inject -f "${serviceFile}" --includeIPRanges=10.36.0.0/14  10.39.240.0/20)
 			cd ..
 			rm -rf "${projectName}"
 		fi
@@ -800,7 +802,8 @@ function performGreenDeploymentOfOtherServices {
 		echo "ingress gateway already deployed? ${ingressDeployed}"
 		if [[ "${ingressDeployed}" == "false" ]]; then
 			echo "deploying ingress in production"
-			deployApp "${ingressFile}"
+			#deployApp "${ingressFile}"
+			kubectl --namespace=sc-pipelines-prod apply -f <(istioctl kube-inject -f "${ingressFile}" --includeIPRanges=10.36.0.0/14  10.39.240.0/20)
 		fi
 	downloadHelm "false"
 	echo "download option for helm is false"
