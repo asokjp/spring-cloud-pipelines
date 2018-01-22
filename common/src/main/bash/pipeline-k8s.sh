@@ -777,17 +777,21 @@ function performGreenDeploymentOfOtherServices {
 		local serviceDeployed
 		serviceDeployed="$(objectDeployed "service" "${projectName}")"
 		echo "Service already deployed? ${serviceDeployed}"
-		if [[ "${serviceDeployed}" == "false" ]]; then
-			git config --global user.email "asok_jp@yahoo.com"
-			git config --global user.name "asokjp"
-			git clone https://asokjp:Lalithamma1@github.com/asokjp/"${projectName}"  --branch dev/"${version}"
-			cd "${projectName}"
-			substituteVariables "appName" "${projectName}" "${serviceFile}"		
-			echo "deploying service file ${serviceFile}"
-			#deployApp "${serviceFile}"
-			kubectl --namespace=sc-pipelines-prod apply -f <(istioctl kube-inject -f "${serviceFile}" --includeIPRanges=10.36.0.0/14  10.39.240.0/20)
-			cd ..
-			rm -rf "${projectName}"
+		#if [[ "${serviceDeployed}" == "false" ]]; then
+		#	git config --global user.email "asok_jp@yahoo.com"
+		#	git config --global user.name "asokjp"
+		#	git clone https://asokjp:Lalithamma1@github.com/asokjp/"${projectName}"  --branch dev/"${version}"
+		#	cd "${projectName}"
+		#	substituteVariables "appName" "${projectName}" "${serviceFile}"		
+		#	echo "deploying service file ${serviceFile}"
+		#	deployApp "${serviceFile}"
+		#	kubectl --namespace=sc-pipelines-prod apply -f <(istioctl kube-inject -f "${serviceFile}" --includeIPRanges=10.36.0.0/14  10.39.240.0/20)
+		#	cd ..
+		#	rm -rf "${projectName}"
+		#fi
+		if [[ "${serviceDeployed}" == "true" ]]; then
+			echo "deleting service {projectName}"
+			kubectl delete svc "${projectName}" --namespace=sc-pipelines-prod
 		fi
 		helmoptions="${helmoptions} --set ${projectName}.image.name=${DOCKER_REGISTRY_ORGANIZATION}/${projectName}:${version} --set ${projectName}.version=${version} "
 	else
@@ -800,10 +804,14 @@ function performGreenDeploymentOfOtherServices {
 	local ingressFile="gatewayingress.yaml"
 	ingressDeployed="$(objectDeployed "ingress" "gateway" )"
 		echo "ingress gateway already deployed? ${ingressDeployed}"
-		if [[ "${ingressDeployed}" == "false" ]]; then
-			echo "deploying ingress in production"
-			#deployApp "${ingressFile}"
-			kubectl --namespace=sc-pipelines-prod apply -f <(istioctl kube-inject -f "${ingressFile}" --includeIPRanges=10.36.0.0/14  10.39.240.0/20)
+		#if [[ "${ingressDeployed}" == "false" ]]; then
+		#	echo "deploying ingress in production"
+		#	#deployApp "${ingressFile}"
+		#	kubectl --namespace=sc-pipelines-prod apply -f <(istioctl kube-inject -f "${ingressFile}" --includeIPRanges=10.36.0.0/14  10.39.240.0/20)
+		#fi
+		if [[ "${ingressDeployed}" == "true" ]]; then
+			echo "deleting ingress gateway"
+			kubectl delete ingress gateway --namespace=sc-pipelines-prod
 		fi
 	downloadHelm "false"
 	echo "download option for helm is false"
