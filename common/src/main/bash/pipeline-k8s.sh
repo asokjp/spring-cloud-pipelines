@@ -836,6 +836,8 @@ function performGreenDeploymentOfOtherServices {
 		git config --global user.name "asokjp"
 		git clone https://asokjp:Lalithamma1@github.com/asokjp/"${projectName}"  --branch dev/"${version}"
 		cd "${projectName}"
+		#setting horizontal pod autoscaler
+		deployHorizontalPodAutoScaler "${projectName}" "1" "3" "50" "${version}"
 		git tag prod/"${version}"
 		git push origin prod/"${version}" --force
 		cd ..
@@ -1155,16 +1157,16 @@ function getBlueInstanceRelease() {
 function deleteBlueInstances() {
 	# first delete config-server
 	# commenting config server
-	local configserverRelease=$(grep 'config-server-release:' releasetrain.yml | awk '{ print $2}')
-	echo "configserverRelease is ${configserverRelease}"
-	local previousConfigServerRelease="$(getBlueInstanceRelease "${configserverRelease}" "config-server" )"
-	echo "previousConfigServerRelease is - ${previousConfigServerRelease}"
-	if [[ "${previousConfigServerRelease}" != "" ]]; then
-		echo "Deleting config-server from blue instance"
-		helm delete ${previousConfigServerRelease}
-	else
-		echo "Will not delete the blue instance for config-server cause it's not there"
-	fi
+	#local configserverRelease=$(grep 'config-server-release:' releasetrain.yml | awk '{ print $2}')
+	#echo "configserverRelease is ${configserverRelease}"
+	#local previousConfigServerRelease="$(getBlueInstanceRelease "${configserverRelease}" "config-server" )"
+	#echo "previousConfigServerRelease is - ${previousConfigServerRelease}"
+	#if [[ "${previousConfigServerRelease}" != "" ]]; then
+	#	echo "Deleting config-server from blue instance"
+	#	helm delete ${previousConfigServerRelease}
+	#else
+	#	echo "Will not delete the blue instance for config-server cause it's not there"
+	#fi
 	# Now delete other services
 	local otherserviceRelease=$(grep 'otherservices-release:' releasetrain.yml | awk '{ print $2}')
 	echo "otherserviceRelease is ${otherserviceRelease}"
@@ -1196,6 +1198,29 @@ function deleteBlueInstance() {
 	else
 		echo "There's no blue instance to remove, skipping this step"
 	fi
+}
+
+function deployHorizontalPodAutoScaler() {
+	local appName="${1}"
+	local minReplicas="${2}"
+	local maxReplicas="${3}"
+	local cpuUtil="${4}"
+	local fullVersion="${5}"
+	local originalDeploymentFile="HPA.yml"
+	local outputDirectory
+	outputDirectory="$(outputFolder)/k8s"
+	mkdir -p "${outputDirectory}"
+	cp "${originalDeploymentFile}" "${outputDirectory}"
+	local deploymentFile="${outputDirectory}/HPA.yml"
+	#converting to kubernetes accetable format
+	local version="$(getReleaseVersionFromPipelineVersion "${fullVersion}" )"
+	echo "version of ${appName} is ${version}"
+	substituteVariables "appName" "${appName}" "${deploymentFile}"
+	substituteVariables "version" "${version}" "${deploymentFile}"
+	substituteVariables "minReplicas" "${minReplicas}" "${deploymentFile}"
+	substituteVariables "maxReplicas" "${maxReplicas}" "${deploymentFile}"
+	substituteVariables "cpuUtilPercentage" "${cpuUtil}" "${deploymentFile}"
+	"${KUBECTL_BIN}" --context="${K8S_CONTEXT}" --namespace="${PAAS_NAMESPACE}" apply -f "${deploymentFile}"
 }
 
 function otherDeployedInstances() {
