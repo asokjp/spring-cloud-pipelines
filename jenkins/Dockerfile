@@ -68,7 +68,7 @@ RUN echo "deb http://packages.cloud.google.com/apt cloud-sdk-xenial main" | tee 
 RUN gcloud init
 # Making docker in docker possible
 RUN curl -L https://git.io/getLatestIstio | sh - && \
-    cd  istio-0.4.0 && \
+    cd  istio-0.5.0 && \
     export PATH=$PWD/bin:$PATH
 
 USER root

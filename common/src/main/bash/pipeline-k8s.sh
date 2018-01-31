@@ -837,7 +837,7 @@ function performGreenDeploymentOfOtherServices {
 		git clone https://asokjp:Lalithamma1@github.com/asokjp/"${projectName}"  --branch dev/"${version}"
 		cd "${projectName}"
 		#setting horizontal pod autoscaler
-		deployHorizontalPodAutoScaler "${projectName}" "1" "3" "50" "${version}"
+		deployHorizontalPodAutoScaler "${projectName}" "1" "3" "50" "${chartVersion}"
 		git tag prod/"${version}"
 		git push origin prod/"${version}" --force
 		cd ..
@@ -1030,6 +1030,8 @@ function rollbackToPreviousVersion() {
 		arrIN=(${latestDeletedOtherServiceRelease//-/ })
 		local lastProdDeployVersion="1.0.0.M1-${arrIN[-2]}_${arrIN[-1]}-VERSION"
 		echo "lastProdDeployVersion is - ${lastProdDeployVersion}"
+		local hpaVersion = "${arrIN[-2]}-${arrIN[-1]}"
+		echo "hpaVersion is - ${hpaVersion}"
 		git config --global user.email "asok_jp@yahoo.com"
 		git config --global user.name "asokjp"
 		git clone https://asokjp:Lalithamma1@github.com/asokjp/prod-env-deploy.git --branch prod/"${lastProdDeployVersion}" --single-branch
@@ -1047,6 +1049,16 @@ function rollbackToPreviousVersion() {
 				echo "true"
 				local pipelineversion=$(grep  "${projectName}:" releasetrain.yml | awk '{ print $2}')
 				echo "version of ${projectName} is ${pipelineversion}"
+				####Starting if setting horizontal auto scaler
+				git config --global user.email "asok_jp@yahoo.com"
+				git config --global user.name "asokjp"
+				git clone https://asokjp:Lalithamma1@github.com/asokjp/"${projectName}"  --branch dev/"${version}"
+				cd "${projectName}"
+				#setting horizontal pod autoscaler
+				deployHorizontalPodAutoScaler "${projectName}" "1" "3" "50" "${hpaVersion}"
+				cd ..
+				rm -rf "${projectName}"
+				########ending of setting horizontal auto scaler
 				local fileNameForProject="${fileName}-${projectName}.yaml"
 				cp ${fileName}.yaml ${fileNameForProject}
 				substituteVariables "version" "${pipelineversion}" "${fileNameForProject}"
@@ -1213,10 +1225,11 @@ function deployHorizontalPodAutoScaler() {
 	cp "${originalDeploymentFile}" "${outputDirectory}"
 	local deploymentFile="${outputDirectory}/HPA.yml"
 	#converting to kubernetes accetable format
-	local version="$(getReleaseVersionFromPipelineVersion "${fullVersion}" )"
-	echo "version of ${appName} is ${version}"
+	#local version="$(getReleaseVersionFromPipelineVersion "${fullVersion}" )"
+	#echo "version of ${appName} is ${version}"
+	echo "version of ${appName} is ${fullVersion}"
 	substituteVariables "appName" "${appName}" "${deploymentFile}"
-	substituteVariables "version" "${version}" "${deploymentFile}"
+	substituteVariables "version" "${fullVersion}" "${deploymentFile}"
 	substituteVariables "minReplicas" "${minReplicas}" "${deploymentFile}"
 	substituteVariables "maxReplicas" "${maxReplicas}" "${deploymentFile}"
 	substituteVariables "cpuUtilPercentage" "${cpuUtil}" "${deploymentFile}"
